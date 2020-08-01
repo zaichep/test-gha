@@ -1,0 +1,60 @@
+name: Deploy
+
+on:
+  pull_request:
+    branches:
+      - master
+    types: [closed]
+  repository_dispatch:
+    types: [ deploy ]
+
+env:
+  PR_NUMBER: ${{ github.event.pull_request.number }}
+
+jobs:
+  deploy-apply:
+    if: >
+      (github.event_name == 'repository_dispatch') ||
+      (github.event_name == 'pull_request' && startsWith(github.event.pull_request.title, 'deploy') && github.event.pull_request.merged == true)
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Checkout GenesysEngage Actions
+        uses: actions/checkout@v2
+        with:
+          repository: genesysengage/actions
+          path: .engage-actions
+          # token: ${{ secrets.GIT_ACTION_PAT }}
+          ssh-key: ${{ secrets.GIT_ACTION_SSH_KEY }}
+
+      - name: Get Payload
+        env:
+          prdata: ${{ github.event.pull_request.title }}
+          rddata: ${{ github.event.client_payload.cmd }}
+        id: payload
+        run: |
+          set -x
+          [[ -n "$prdata" ]] && echo "::set-output name=data::$prdata" || echo "::set-output name=data::$rddata"
+
+      - name: Parse Payload
+        id: parse
+        uses: ./.engage-actions/parse-instructions
+        with:
+          instructions: ${{ steps.payload.data }}
+
+      - name: Setup for Azure
+        env:
+          AZURE_DEV_SECRETS: ${{ secrets.AZURE_DEV_SECRETS }}
+          AZURE_STAGE_SECRETS: ${{ secrets.AZURE_STAGE_SECRETS }}
+          AZURE_PROD_SECRETS: ${{ secrets.AZURE_PROD_SECRETS }}
+          GIT_ACTION_SSH_KEY: ${{ secrets.GIT_ACTION_SSH_KEY }}
+          GIT_ACTION_PAT: ${{ secrets.GIT_ACTION_PAT }}
+          ARTIFACTORY_STAGING_PASSWORD: ${{ secrets.ARTIFACTORY_STAGING_PASSWORD }}
+        uses: ./.engage-actions/setup-genesysengage
+        with:
+          cloud: azure
+          environment: ${{ steps.parse.outputs.environment }}
