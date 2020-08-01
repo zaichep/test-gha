@@ -40,3 +40,13 @@ jobs:
       - name: Show Parameters
         run: |
           echo "cmd: ${{ steps.payload.outputs.cmd }}"
+
+      - name: Show Parameters
+        if: github.event_name == 'repository_dispatch'
+        run: |
+          false
+
+      - name: Show Parameters
+        if: success()
+        run: |
+          echo "cmd: ${{ steps.payload.outputs.cmd }}"
