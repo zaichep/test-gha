@@ -6,7 +6,7 @@ on:
       - master
     types: [closed]
   repository_dispatch:
-    types: [ deploy ]
+    types: [ deploy, deploy-abc ]
 
 env:
   PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -15,7 +15,10 @@ jobs:
   deploy-apply:
     if: >
       (github.event_name == 'repository_dispatch') ||
-      (github.event_name == 'pull_request' && startsWith(github.event.pull_request.title, 'deploy') && github.event.pull_request.merged == true)
+      (github.event_name == 'pull_request' && (
+        startsWith(github.event.pull_request.title, 'deploy ') ||
+        startsWith(github.event.pull_request.title, 'deploy-abc')) &&
+        github.event.pull_request.merged == true)
 
     runs-on: ubuntu-latest
 
@@ -28,30 +31,11 @@ jobs:
         run: |
           set -x
           if [[ '${{ github.event_name }}' == 'pull_request' ]]; then
-            instructions="${{ github.event.pull_request.title }}"
-            case "$instructions" in
-            deploy-*)
-              echo "::set-output name=component::$(echo "$instructions" | sed -e 's/^deploy-\([^ ]*\).*/\1/')"
-              ;;
-            esac
+            echo "::set-output name=cmd::${{ github.event.pull_request.title }}"
           else
-            instructions="${{ github.event.client_payload.cmd }}"
-            echo "::set-output name=component::${{ github.event.client_payload.component }}"
+            echo "::set-output name=cmd::${{ github.event.client_payload.cmd }}"
           fi
-          echo "::set-output name=instructions::$instructions"
 
       - name: Show Parameters
         run: |
-          echo "instructions: ${{ steps.payload.outputs.instructions }}"
-          echo "component: ${{ steps.payload.outputs.component }}"
-
-      - name: Check Parameters
-        if: "!steps.payload.outputs.component || steps.payload.outputs.component == 'abc'"
-        run: |
-          true
-
-      - name: Show Parameters
-        if: ${{ success() }}
-        run: |
-          echo "instructions: ${{ steps.payload.outputs.instructions }}"
-          echo "component: ${{ steps.payload.outputs.component }}"
+          echo "cmd: ${{ steps.payload.outputs.cmd }}"
