@@ -27,6 +27,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: genesysengage/actions
+          ref: master
           path: .engage-actions
           # token: ${{ secrets.GIT_ACTION_PAT }}
           ssh-key: ${{ secrets.GIT_ACTION_SSH_KEY }}
