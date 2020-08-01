@@ -23,14 +23,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Checkout GenesysEngage Actions
-        uses: actions/checkout@v2
-        with:
-          repository: genesysengage/actions
-          path: .engage-actions
-          # token: ${{ secrets.GIT_ACTION_PAT }}
-          ssh-key: ${{ secrets.GIT_ACTION_SSH_KEY }}
-
       - name: Get Payload
         env:
           prdata: ${{ github.event.pull_request.title }}
@@ -40,21 +32,6 @@ jobs:
           set -x
           [[ -n "$prdata" ]] && echo "::set-output name=data::$prdata" || echo "::set-output name=data::$rddata"
 
-      - name: Parse Payload
-        id: parse
-        uses: ./.engage-actions/parse-instructions
-        with:
-          instructions: ${{ steps.payload.data }}
-
-      - name: Setup for Azure
-        env:
-          AZURE_DEV_SECRETS: ${{ secrets.AZURE_DEV_SECRETS }}
-          AZURE_STAGE_SECRETS: ${{ secrets.AZURE_STAGE_SECRETS }}
-          AZURE_PROD_SECRETS: ${{ secrets.AZURE_PROD_SECRETS }}
-          GIT_ACTION_SSH_KEY: ${{ secrets.GIT_ACTION_SSH_KEY }}
-          GIT_ACTION_PAT: ${{ secrets.GIT_ACTION_PAT }}
-          ARTIFACTORY_STAGING_PASSWORD: ${{ secrets.ARTIFACTORY_STAGING_PASSWORD }}
-        uses: ./.engage-actions/setup-genesysengage
-        with:
-          cloud: azure
-          environment: ${{ steps.parse.outputs.environment }}
+      - name: Show Payload
+        run: |
+          echo "DATA: ${{ steps.payload.data }}"
