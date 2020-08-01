@@ -18,25 +18,28 @@ jobs:
       (github.event_name == 'pull_request' && startsWith(github.event.pull_request.title, 'deploy') && github.event.pull_request.merged == true)
 
     runs-on: ubuntu-latest
-    # outputs:
-    #   instructions: ${{ github.event.pull_request.title }}${{ github.event.client_payload.cmd }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
 
       - name: Get Payload
-        env:
-          prdata: ${{ github.event.pull_request.title }}
-          rddata: ${{ github.event.client_payload.cmd }}
         id: payload
         run: |
           set -x
-          [[ -n "$prdata" ]] && echo "::set-output name=data::\"$prdata\"" || echo "::set-output name=data::\"$rddata\""
+          if [[ '${{ github.event_name }}' == 'pull_request' ]]; then
+            instructions="${{ github.event.pull_request.title }}"
+          else
+            instructions="${{ github.event.pull_request.title }}"
+          fi
+          echo "::set-output name=instructions::$instructions"
+          case "$instructions" in
+          deploy-*)
+            echo "::set-output name=component::$(sed -e 's/^deploy-\([^ ]*\).*/\1/')"
+            ;;
+          esac
 
-      - name: Show Payload
-        env:
-          instructions: ${{ steps.payload.outputs.data }}
+      - name: Show Parameters
         run: |
-          echo "instructions1: $instructions"
-          echo "instructions2: ${{ steps.payload.outputs.data }}"
+          echo "instructions: ${{ steps.payload.outputs.instructions }}"
+          echo "component: ${{ steps.payload.outputs.component }}"
