@@ -38,5 +38,5 @@ jobs:
         env:
           instructions: ${{ steps.payload.outputs.data }}
         run: |
-          echo "instructions1: $instructions1"
+          echo "instructions1: $instructions"
           echo "instructions2: ${{ steps.payload.outputs.data }}"
