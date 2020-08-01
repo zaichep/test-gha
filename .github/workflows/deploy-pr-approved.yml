@@ -30,7 +30,7 @@ jobs:
         id: payload
         run: |
           set -x
-          [[ -n "$prdata" ]] && echo "::set-output name=data::$prdata" || echo "::set-output name=data::$rddata"
+          [[ -n "$prdata" ]] && echo "::set-output name=data::\"$prdata\"" || echo "::set-output name=data::\"$rddata\""
 
       - name: Show Payload
         env:
