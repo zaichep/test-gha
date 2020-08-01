@@ -36,8 +36,7 @@ jobs:
 
       - name: Show Payload
         env:
-          instructions1: ${{ steps.payload.outputs.data }}
-          instructions2: ${{ outputs.data }}
+          instructions: ${{ steps.payload.outputs.data }}
         run: |
           echo "instructions1: $instructions1"
-          echo "instructions2: $instructions2"
+          echo "instructions2: ${{ steps.payload.outputs.data }}"
