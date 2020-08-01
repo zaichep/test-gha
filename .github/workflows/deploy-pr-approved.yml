@@ -33,5 +33,7 @@ jobs:
           [[ -n "$prdata" ]] && echo "::set-output name=data::$prdata" || echo "::set-output name=data::$rddata"
 
       - name: Show Payload
+        env:
+          DATA: ${{ steps.payload.data }}
         run: |
-          echo "DATA: ${{ steps.payload.data }}"
+          echo "DATA: ${DATA}"
