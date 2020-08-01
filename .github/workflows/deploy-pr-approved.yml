@@ -18,6 +18,8 @@ jobs:
       (github.event_name == 'pull_request' && startsWith(github.event.pull_request.title, 'deploy') && github.event.pull_request.merged == true)
 
     runs-on: ubuntu-latest
+    # outputs:
+    #   instructions: ${{ github.event.pull_request.title }}${{ github.event.client_payload.cmd }}
 
     steps:
       - name: Checkout repository
@@ -34,6 +36,8 @@ jobs:
 
       - name: Show Payload
         env:
-          instructions: ${{ steps.payload.data }}
+          instructions1: ${{ steps.payload.outputs.data }}
+          instructions2: ${{ outputs.data }}
         run: |
-          echo "instructions: $instructions"
+          echo "instructions1: $instructions1"
+          echo "instructions2: $instructions2"
