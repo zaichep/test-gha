@@ -44,7 +44,7 @@ jobs:
       - name: Show Parameters
         if: github.event_name == 'repository_dispatch'
         run: |
-          false
+          true
 
       - name: Show Parameters
         if: success()
