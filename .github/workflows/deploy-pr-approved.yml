@@ -20,7 +20,7 @@ jobs:
 
   end:
     needs: [ start, job-1, job-2 ]
-    if: ${{ always() }}
+    if: always()
     runs-on: ubuntu-latest
 
     steps:
