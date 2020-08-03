@@ -19,13 +19,13 @@ jobs:
           [[ "${{ github.event.action }}" != "test-fail" ]]
 
   end:
-    needs: [ job-1, job-2 ]
+    needs: [ start, job-1, job-2 ]
     runs-on: ubuntu-latest
 
     steps:
       - name: Main
         run: |
-          echo "${{ join(needs.*.result, ', ') }}"
+          [[ "${{ contains(needs.*.result, 'failure') }}" == "false" ]]
 
   job-1:
     needs: [ start ]
