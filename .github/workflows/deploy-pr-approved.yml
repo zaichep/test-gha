@@ -5,7 +5,33 @@ on:
     types: [ test, test-fail, test-skip ]
 
 jobs:
-  start:
+  init:
+    if: github.event.action != 'test-skip'
+    outputs:
+      instructions: "deploy dev westus2"
+      deployment-code: ""
+      components: ""
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Main
+        run: |
+          [[ "${{ github.event.action }}" != "test-fail" ]]
+
+      - name: Get Parameters
+        id: params
+        run: |
+          set -x
+          echo "::set-output name=instructions::deploy ${{ github.event.client_payload.instructions }}"
+          echo "::set-output name=deployment-code::${{ github.event.client_payload.deployment-code }}"
+          echo "::set-output name=components::${{ github.event.client_payload.components }}"
+
+  job-0:
+    needs: [ init ]
     if: github.event.action != 'test-skip'
 
     runs-on: ubuntu-latest
@@ -18,8 +44,14 @@ jobs:
         run: |
           [[ "${{ github.event.action }}" != "test-fail" ]]
 
+      - name: Show Parameters
+        run: |
+          echo "instructions: ${{ needs.init.outputs.instructions }}"
+          echo "deployment-code: ${{ needs.init.outputs.deployment-code }}"
+          echo "components: ${{ needs.init.outputs.components }}"
+
   end:
-    needs: [ start, job-1, job-2 ]
+    needs: [ init, job-0, job-1, job-2 ]
     if: always()
     runs-on: ubuntu-latest
 
@@ -29,7 +61,8 @@ jobs:
           [[ "${{ contains(needs.*.result, 'failure') }}" == "false" ]]
 
   job-1:
-    needs: [ start ]
+    needs: [ init, job-0 ]
+    if: "!contains(needs.*.result, 'failure')"
     runs-on: ubuntu-latest
 
     steps:
@@ -51,7 +84,8 @@ jobs:
           touch job-1.lock
 
   job-2:
-    needs: [ start ]
+    needs: [ init, job-0 ]
+    if: "!contains(needs.*.result, 'failure')"
     runs-on: ubuntu-latest
 
     steps:
