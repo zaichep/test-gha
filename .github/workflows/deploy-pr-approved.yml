@@ -41,13 +41,14 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            job-1
+            job-1.lock
           key: ${{ runner.os }}-job1-${{ hashFiles('job-1') }}
 
       - name: Main
         if: steps.modified.outputs.cache-hit != 'true'
         run: |
-          true
+          ls -al
+          touch job-1.lock
 
   job-2:
     needs: [ start ]
@@ -62,10 +63,11 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            job-2
+            job-2.lock
           key: ${{ runner.os }}-job2-${{ hashFiles('job-2') }}
 
       - name: Main
         if: steps.modified.outputs.cache-hit != 'true'
         run: |
-          true
+          ls -al
+          touch job-2.lock
