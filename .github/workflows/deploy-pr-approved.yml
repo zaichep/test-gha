@@ -1,25 +1,12 @@
 name: Deploy
 
 on:
-  pull_request:
-    branches:
-      - master
-    types: [closed]
   repository_dispatch:
-    types: [ deploy, deploy-abc ]
-
-env:
-  PR_NUMBER: ${{ github.event.pull_request.number }}
+    types: [ test, test-fail, test-skip ]
 
 jobs:
-  deploy-apply:
-    if: >
-      (github.event_name == 'repository_dispatch') ||
-      (github.event_name == 'pull_request' && (
-        github.event.pull_request.title == 'deploy' ||
-        startsWith(github.event.pull_request.title, 'deploy ') ||
-        startsWith(github.event.pull_request.title, 'deploy-abc')) &&
-        github.event.pull_request.merged == true)
+  start:
+    if: github.event.action != 'test-skip'
 
     runs-on: ubuntu-latest
 
@@ -27,26 +14,53 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Get Payload
-        id: payload
+      - name: Main
         run: |
-          set -x
-          if [[ '${{ github.event_name }}' == 'pull_request' ]]; then
-            echo "::set-output name=cmd::${{ github.event.pull_request.title }}"
-          else
-            echo "::set-output name=cmd::${{ github.event.client_payload.cmd }}"
-          fi
+          [[ "${{ github.event.action }}" != "test-fail" ]]
 
-      - name: Show Parameters
-        run: |
-          echo "cmd: ${{ steps.payload.outputs.cmd }}"
+  end:
+    needs: [ job-1, job-2 ]
+    runs-on: ubuntu-latest
 
-      - name: Show Parameters
-        if: github.event_name == 'pull_request'
+    steps:
+      - name: Main
         run: |
           true
 
-      - name: Show Parameters
-        if: success()
+  job-1:
+    needs: [ start ]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Check Changes
+        id: modified
+        uses: actions/cache@v2
+        with:
+          key: ${{ os.runner }}-job1-${{ hashFiles(job-1) }}
+
+      - name: Main
+        if: steps.modified.outputs.cache-hit != 'true'
         run: |
-          echo "cmd: ${{ steps.payload.outputs.cmd }}"
+          true
+
+  job-2:
+    needs: [ start ]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Check Changes
+        id: modified
+        uses: actions/cache@v2
+        with:
+          key: ${{ os.runner }}-job1-${{ hashFiles(job-2) }}
+
+      - name: Main
+        if: steps.modified.outputs.cache-hit != 'true'
+        run: |
+          true
