@@ -25,7 +25,7 @@ jobs:
       - name: Get Parameters
         id: params
         run: |
-          comps="${{ github.event.client_payload.components }}"
+          comps="${{ fromJSON(github.event.client_payload.components) }}"
           if [[ -z $comps ]]; then
             for c in 0 1 2; do
               [[ -n $comps ]] && comps="$comps, "
