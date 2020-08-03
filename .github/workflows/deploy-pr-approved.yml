@@ -33,6 +33,7 @@ jobs:
             done
             comps="[$comps]"
           fi
+          comps=$(echo "$comps" | awk '{printf "%s", $0}')
           set -x
           echo "::set-output name=instructions::deploy ${{ github.event.client_payload.instructions }}"
           echo "::set-output name=deployment-code::${{ github.event.client_payload.deployment-code }}"
