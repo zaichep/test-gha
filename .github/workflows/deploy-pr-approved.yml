@@ -11,6 +11,7 @@ jobs:
       instructions: ${{ steps.params.outputs.instructions }}
       deployment-code: ${{ steps.params.outputs.deployment-code }}
       components: ${{ steps.params.outputs.components }}
+      matrix: ${{ steps.params.outputs.matrix }}
 
     runs-on: ubuntu-latest
 
@@ -25,19 +26,19 @@ jobs:
       - name: Get Parameters
         id: params
         run: |
-          comps='${{ toJSON(github.event.client_payload.components) }}'
-          if [[ -z $comps ]]; then
-            for c in 0 1 2; do
-              [[ -n $comps ]] && comps="$comps, "
-              comps="$comps\"$c\""
-            done
-            comps="[$comps]"
-          fi
-          comps=$(echo "$comps" | awk '{printf "%s", $0}')
+          comps=${{ toJSON(github.event.client_payload.components) }}
+          [[ "$comps" == "null" ]] && comps="1 2"
+          matrix=
+          for c in $comps; do
+            [[ -n $matrix ]] && matrix="$matrix, "
+            matrix="$matrix\"$c\""
+          done
+          matrix="{\"component\":[$matrix]}"
           set -x
           echo "::set-output name=instructions::deploy ${{ github.event.client_payload.instructions }}"
           echo "::set-output name=deployment-code::${{ github.event.client_payload.deployment-code }}"
           echo "::set-output name=components::$comps"
+          echo "::set-output name=matrix::$matrix"
 
   job-0:
     needs: [ init ]
@@ -58,6 +59,7 @@ jobs:
           echo "instructions: ${{ needs.init.outputs.instructions }}"
           echo "deployment-code: ${{ needs.init.outputs.deployment-code }}"
           echo "components: ${{ needs.init.outputs.components }}"
+          echo "matrix: ${{ needs.init.outputs.matrix }}"
 
   end:
     needs: [ init, job-0, job-1, job-2 ]
@@ -72,6 +74,8 @@ jobs:
   job-1:
     needs: [ init, job-0 ]
     if: "!contains(needs.*.result, 'failure')"
+    strategy:
+      matrix: ${{ fromJSON(needs.init.outputs.matrix) }}
     runs-on: ubuntu-latest
 
     steps:
@@ -83,14 +87,14 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            job-1.lock
-          key: ${{ runner.os }}-job1-${{ hashFiles('job-1') }}
+            job-${{ matrix.component }}.lock
+          key: ${{ runner.os }}-job${{ matrix.component }}-${{ hashFiles('job-${{ matrix.component }}') }}
 
       - name: Main
         if: steps.modified.outputs.cache-hit != 'true'
         run: |
           ls -al
-          touch job-1.lock
+          touch job-${{ matrix.component }}.lock
 
   job-2:
     needs: [ init, job-0 ]
