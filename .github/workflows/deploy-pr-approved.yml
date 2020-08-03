@@ -39,7 +39,7 @@ jobs:
         id: modified
         uses: actions/cache@v2
         with:
-          key: ${{ os.runner }}-job1-${{ hashFiles(job-1) }}
+          key: ${{ runner.os }}-job1-${{ hashFiles(job-1) }}
 
       - name: Main
         if: steps.modified.outputs.cache-hit != 'true'
@@ -58,7 +58,7 @@ jobs:
         id: modified
         uses: actions/cache@v2
         with:
-          key: ${{ os.runner }}-job1-${{ hashFiles(job-2) }}
+          key: ${{ runner.os }}-job1-${{ hashFiles(job-2) }}
 
       - name: Main
         if: steps.modified.outputs.cache-hit != 'true'
