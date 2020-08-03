@@ -25,7 +25,7 @@ jobs:
     steps:
       - name: Main
         run: |
-          true
+          echo "${{ join(needs.*.result, ', ') }}"
 
   job-1:
     needs: [ start ]
