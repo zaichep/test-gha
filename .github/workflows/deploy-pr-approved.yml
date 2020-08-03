@@ -25,17 +25,17 @@ jobs:
       - name: Get Parameters
         id: params
         run: |
-          set -x
-          echo "::set-output name=instructions::deploy ${{ github.event.client_payload.instructions }}"
-          echo "::set-output name=deployment-code::${{ github.event.client_payload.deployment-code }}"
           comps="${{ github.event.client_payload.components }}"
           if [[ -z $comps ]]; then
             for c in 0 1 2; do
-              [[ -n $comps ]] comps="$comps, "
+              [[ -n $comps ]] && comps="$comps, "
               comps="$comps\"$c\""
             done
             comps="[$comps]"
           fi
+          set -x
+          echo "::set-output name=instructions::deploy ${{ github.event.client_payload.instructions }}"
+          echo "::set-output name=deployment-code::${{ github.event.client_payload.deployment-code }}"
           echo "::set-output name=components::$comps"
 
   job-0:
