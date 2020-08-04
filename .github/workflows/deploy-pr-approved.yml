@@ -89,7 +89,7 @@ jobs:
         with:
           path: |
             job-${{ matrix.component }}.lock
-          key: ${{ runner.os }}-job${{ matrix.component }}-${{ hashFiles('job-${{ matrix.component }}') }}
+          key: ${{ runner.os }}-job${{ matrix.component }}-${{ hashFiles('job-' & matrix.component) }}
 
       - name: Main
         if: steps.modified.outputs.cache-hit != 'true'
