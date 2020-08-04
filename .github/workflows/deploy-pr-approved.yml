@@ -75,7 +75,8 @@ jobs:
     needs: [ init, job-0 ]
     if: "!contains(needs.*.result, 'failure')"
     strategy:
-      matrix: ${{ fromJSON(needs.init.outputs.matrix) }}
+      matrix:
+        ${{ fromJSON(needs.init.outputs.matrix) }}
     runs-on: ubuntu-latest
 
     steps:
@@ -83,7 +84,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Check Changes
-        id: modified-${{ matrix.component }}
+        id: modified
         uses: actions/cache@v2
         with:
           path: |
@@ -91,8 +92,9 @@ jobs:
           key: ${{ runner.os }}-job${{ matrix.component }}-${{ hashFiles('job-${{ matrix.component }}') }}
 
       - name: Main
-        if: steps.modified-${{ matrix.component }}.outputs.cache-hit != 'true'
+        if: steps.modified.outputs.cache-hit != 'true'
         run: |
+          echo '${{ toJSON(steps.modified.outputs) }}'
           ls -al
           touch job-${{ matrix.component }}.lock
 
