@@ -74,13 +74,17 @@ jobs:
     strategy:
       matrix:
         ${{ fromJSON(needs.init.outputs.matrix) }}
-    env:
-      hash: ${{ hashFiles('job-3', format('job-{0}', matrix.component)) }}
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+
+      - name: Hash Dependencies
+        id: hash
+        run: |
+          set -x
+          echo "::set-output name=data::${{ hashFiles('job-3', format('job-{0}', matrix.component)) }}"
 
       - name: Check Changes
         id: modified
@@ -88,7 +92,7 @@ jobs:
         with:
           path: |
             job-${{ matrix.component }}.lock
-          key: ${{ runner.os }}-job${{ matrix.component }}-${{ hash }}
+          key: ${{ runner.os }}-job${{ matrix.component }}-${{ steps.hash.outputs.data }}
 
       - name: Main
         if: steps.modified.outputs.cache-hit != 'true'
