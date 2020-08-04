@@ -83,13 +83,10 @@ jobs:
       - name: Check Changes
         id: modified
         uses: actions/cache@v2
-        env:
-          dep_files: >
-            job-${{ matrix.component }}
         with:
           path: |
             job-${{ matrix.component }}.lock
-          key: ${{ runner.os }}-job${{ matrix.component }}-${{ hashFiles(env.dep_files) }}
+          key: ${{ runner.os }}-job${{ matrix.component }}-${{ hashFiles('job-3', format('job-{0}', matrix.component)) }}
 
       - name: Main
         if: steps.modified.outputs.cache-hit != 'true'
