@@ -16,9 +16,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
       - name: Main
         run: |
           [[ "${{ github.event.action }}" != "test-fail" ]]
@@ -89,7 +86,7 @@ jobs:
         with:
           path: |
             job-${{ matrix.component }}.lock
-          key: ${{ runner.os }}-job${{ matrix.component }}-${{ hashFiles('job-' & matrix.component) }}
+          key: ${{ runner.os }}-job${{ matrix.component }}-${{ hashFiles('job-' + matrix.component) }}
 
       - name: Main
         if: steps.modified.outputs.cache-hit != 'true'
