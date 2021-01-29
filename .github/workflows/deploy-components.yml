@@ -1,0 +1,63 @@
+# Deploy components when a Pull Request is merged.
+# See README.md for all supported parameters.
+
+name: Test Deploy
+
+on:
+  pull_request:
+    branches:
+      - master
+    types: [closed]
+
+jobs:
+
+  # Inititlize parameters ################################################
+  init:
+    outputs:
+      # List of charts separated by spaces
+      # Note: `pulse-manage-agents` is conditionally included
+      charts: ${{ steps.params.outputs.charts }}
+      # Matrix in JSON format for chart job
+      #  environment: [dev]
+      #  location: [...]
+      #  chart: [...]
+      chart-matrix: ${{ steps.params.outputs.chart-matrix }}
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f # v2.3.4
+
+      - name: Get Parameters
+        id: params
+        run: |
+          set -x
+          charts="dummy"
+          charts=$(echo "${charts}" | sed -e 's/^ *\(.*[^ ]\) *$/\1/')
+          chart_matrix=
+          for c in ${charts}; do
+            [[ -n ${chart_matrix} ]] && chart_matrix="${chart_matrix}, "
+            chart_matrix="${chart_matrix}\"${c}\""
+          done
+          chart_matrix="\"chart\":[${chart_matrix}]"
+          echo "::set-output name=charts::${charts}"
+          echo "::set-output name=chart-matrix::{${chart_matrix}}"
+
+  # Publish Helm Chart ###################################################
+  publish-helm-chart:
+    if: "github.event.pull_request.merged == true && !contains(needs.*.result, 'failure')"
+    needs: [ init ]
+    strategy:
+      matrix: ${{ fromJSON(needs.init.outputs.chart-matrix) }}
+      fail-fast: false
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check Published
+        uses: actions/cache@0781355a23dac32fd3bac414512f4b903437991a # v2.1.3
+        with:
+          path: |
+            test-publish-${{ matrix.chart }}.lock
+          key: test-publish-${{ matrix.chart }}
