@@ -1,7 +1,7 @@
 # Deploy components when a Pull Request is merged.
 # See README.md for all supported parameters.
 
-name: Deploy Components
+name: Test Deploy
 
 on:
   pull_request:
