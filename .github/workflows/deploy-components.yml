@@ -4,10 +4,9 @@
 name: Test Deploy
 
 on:
-  pull_request:
+  push:
     branches:
       - master
-    types: [closed]
 
 jobs:
 
@@ -46,7 +45,6 @@ jobs:
 
   # Publish Helm Chart ###################################################
   publish-helm-chart:
-    if: "github.event.pull_request.merged == true && !contains(needs.*.result, 'failure')"
     needs: [ init ]
     strategy:
       matrix: ${{ fromJSON(needs.init.outputs.chart-matrix) }}
