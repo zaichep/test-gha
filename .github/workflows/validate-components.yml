@@ -24,13 +24,13 @@ jobs:
       tenants: ${{ steps.params.outputs.tenants }}
       # Matrix of charts in JSON format
       #  chart: [...]
-      chart-matrix: '"chart":${{ steps.params.outputs.charts-json }}'
+      chart-matrix: '{"chart":${{ steps.params.outputs.charts-json }}}'
       # Matrix of environments in JSON format
       #  environment: [...]
-      environment-matrix: '"environment":${{ steps.params.outputs.environments-json }}'
+      environment-matrix: '{"environment":${{ steps.params.outputs.environments-json }}}'
       # Matrix of locations in JSON format
       #  location: [...]
-      location-matrix: '"location":${{ steps.params.outputs.locations-json }}'
+      location-matrix: '{"location":${{ steps.params.outputs.locations-json }}}'
 
     runs-on: ubuntu-latest
 
