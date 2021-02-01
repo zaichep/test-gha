@@ -24,13 +24,9 @@ jobs:
       tenants: ${{ steps.params.outputs.tenants }}
       # Matrix of charts in JSON format
       #  chart: [...]
-      chart-matrix: '{"chart":${{ steps.params.outputs.charts-json }}}'
-      # Matrix of environments in JSON format
       #  environment: [...]
-      environment-matrix: '{"environment":${{ steps.params.outputs.environments-json }}}'
-      # Matrix of locations in JSON format
       #  location: [...]
-      location-matrix: '{"location":${{ steps.params.outputs.locations-json }}}'
+      helm-chart-matrix: '${{ steps.params.outputs.helm-chart-matrix }}'
 
     runs-on: ubuntu-latest
 
@@ -67,9 +63,7 @@ jobs:
           locations_json=$(printf '"%s",' "${locations[@]}" | sed 's/^/[/;s/,$/]/')
           echo "::set-output name=charts::${charts[*]}"
           echo "::set-output name=tenants::${tenants[*]}"
-          echo "::set-output name=charts-json::${charts_json}"
-          echo "::set-output name=environments-json::${environments_json}"
-          echo "::set-output name=locations-json::${locations_json}"
+          echo "::set-output name=helm-chart-matrix::{\"chart\":${charts_json},\"environment\":${environments_json},\"location\":${locations_json}}"
 
   # Aggregate states of validation #######################################
   build:
@@ -86,10 +80,7 @@ jobs:
   helm-chart:
     needs: [ init ]
     strategy:
-      matrix:
-        ${{ fromJSON(needs.init.outputs.chart-matrix) }}
-        ${{ fromJSON(needs.init.outputs.environment-matrix) }}
-        ${{ fromJSON(needs.init.outputs.location-matrix) }}
+      matrix: ${{ fromJSON(needs.init.outputs.helm-chart-matrix) }}
       fail-fast: false
 
     runs-on: ubuntu-latest

@@ -14,13 +14,14 @@ jobs:
     outputs:
       # Matrix of charts in JSON format
       #  chart: [...]
-      chart-matrix: '"chart":${{ steps.params.outputs.charts-json }}'
-      # Matrix of environments in JSON format
       #  environment: [...]
-      environment-matrix: '"environment":["dev","stage","prod001"]'
-      # Matrix of locations in JSON format
       #  location: [...]
-      location-matrix: '"location":["westus2","eastus2"]'
+      helm-chart-matrix: '${{ steps.params.outputs.helm-chart-matrix }}'
+      # Matrix of charts in JSON format
+      #  chart: [...]
+      #  environment: [...]
+      #  location: [...]
+      helm-chart-values-matrix: '${{ steps.params.outputs.helm-chart-values-matrix }}'
 
     runs-on:
       - self-hosted
@@ -44,16 +45,21 @@ jobs:
         run: |
           set -x
           charts=($(find ${GITHUB_WORKSPACE}/helm -maxdepth 1 -mindepth 1 -type d -printf '%f\n'))
+          environments=(dev stage prod001)
+          locations=(westus2 eastus2)
           charts_json=$(printf '"%s",' "${charts[@]}" | sed 's/^/[/;s/,$/]/')
+          environments_json=$(printf '"%s",' "${environments[@]}" | sed 's/^/[/;s/,$/]/')
+          locations_json=$(printf '"%s",' "${locations[@]}" | sed 's/^/[/;s/,$/]/')
           echo "::set-output name=charts-json::${charts_json}"
+          echo "::set-output name=helm-chart-matrix::{\"chart\":${charts_json}}"
+          echo "::set-output name=helm-chart-values-matrix::{\"chart\":${charts_json},\"environment\":${environments_json},\"location\":${locations_json}}"
 
   # Cache Helm Chart #####################################################
   helm-chart:
     needs: [ init ]
     if: "!contains(needs.*.result, 'failure')"
     strategy:
-      matrix:
-        ${{ fromJSON(needs.init.outputs.chart-matrix) }}
+      matrix: ${{ fromJSON(needs.init.outputs.helm-chart-matrix) }}
       fail-fast: false
 
     runs-on: ubuntu-latest
@@ -108,10 +114,7 @@ jobs:
     needs: [ init ]
     if: "!contains(needs.*.result, 'failure')"
     strategy:
-      matrix:
-        ${{ fromJSON(needs.init.outputs.chart-matrix) }}
-        ${{ fromJSON(needs.init.outputs.environment-matrix) }}
-        ${{ fromJSON(needs.init.outputs.location-matrix) }}
+      matrix: ${{ fromJSON(needs.init.outputs.helm-chart-values-matrix) }}
       fail-fast: false
 
     runs-on: ubuntu-latest
