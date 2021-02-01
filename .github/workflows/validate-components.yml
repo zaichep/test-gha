@@ -149,7 +149,7 @@ jobs:
           path: |
             helm/modify-values-${{ matrix.chart }}-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.values-hash }}.lock
           key: ${{ runner.os }}-modify-helm-chart-values-${{ matrix.chart }}-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.values-hash }}
-          restore-keys: modify-helm-chart-${{ matrix.chart }}-${{ steps.chart-info.outputs.hash }}
+          restore-keys: modify-helm-chart-${{ matrix.chart }}-${{ steps.chart-info.outputs.values-hash }}
 
       - name: Get Workflow Modified
         uses: actions/cache@0781355a23dac32fd3bac414512f4b903437991a # v2.1.3
