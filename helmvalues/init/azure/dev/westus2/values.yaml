@@ -1,0 +1,40 @@
+# Helm chart values overrides only for Azure Dev westus2
+tenant: ""
+
+tenants:
+  - id: c51755db-0d75-0c76-24d1-27dc7012cfea
+    name: t1100
+    key: 1100
+    dcu: 4
+  - id: 22c040b9-1d0b-45b9-8518-b8caadc40078
+    name: t0078
+    key: 78
+    dcu: 4
+  - id: f84ca7b8-5a64-4ece-9e3a-60966f8e0079
+    name: t0079
+    key: 79
+    dcu: 4
+  - id: 3e496b9b-7eeb-43af-930a-ad74f3aa0080
+    name: t0080
+    key: 80
+    dcu: 4
+  - id: 835c8d8f-ae80-4213-9c15-952bb6ed0084
+    name: t0084
+    key: 0084
+    dcu: 4
+  - id: 0eeadaa9-e101-4e41-8951-7a60345f0085
+    name: t0085
+    key: 0085
+    dcu: 4
+  - id: 8264ef09-c446-4da8-8c7d-488f84252100
+    name: t2100
+    key: 2100
+    dcu: 4
+  - id: 7cc6fbab-387d-49f6-8ce8-ae48a4a50086
+    name: t0086
+    key: 0086
+    dcu: 4
+  - id: d3a17e88-66df-46de-9e61-6486f6440083
+    name: t0083
+    key: 0083
+    dcu: 4

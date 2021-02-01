@@ -1,0 +1,174 @@
+{{/* vim: set filetype=mustache: */}}
+
+{{- define "common.util.nameString" -}}
+{{ . | toString | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{- define "common.util.versionString" -}}
+{{ include "common.util.nameString" (. | toString | replace "+" "_") }}
+{{- end }}
+
+{{- define "common.util.idString" -}}
+{{ regexReplaceAll "[^a-zA-Z0-9_]" (include "common.util.nameString" .) "_" }}
+{{- end }}
+
+{{- /*
+Merge two YAML templates and output the result.
+This takes an array of three values:
+- the top context
+- the template name of the overrides (destination)
+- the template name of the base (source)
+*/ -}}
+{{- define "common.util.merge" -}}
+{{- $top := first . -}}
+{{- $args := rest . -}}
+{{- $overrides := fromYaml (include (first $args) $top) | default (dict ) -}}
+{{- $tpl := fromYaml (include (last $args) $top) | default (dict ) -}}
+{{- toYaml (merge $overrides $tpl) -}}
+{{- end -}}
+
+{{- /*
+Expand the name of this chart.
+*/ -}}
+{{- define "common.util.chart.thisName" -}}
+{{- include "common.util.nameString" (coalesce .Values.nameOverride .Chart.Name) }}
+{{- end }}
+
+{{- /*
+Expand the name of the chart.
+*/ -}}
+{{- define "common.util.chart.name" -}}
+{{- include "common.util.nameString" (coalesce .chart (include "common.util.chart.thisName" .)) }}
+{{- end }}
+
+{{- /*
+Create a default fully qualified app name.
+We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
+If release name contains chart name it will be used as a full name.
+*/ -}}
+{{- define "common.util.chart.fullname" -}}
+{{- $fullname := "" }}
+{{- $thisName := (include "common.util.chart.thisName" .) }}
+{{- $name := (include "common.util.chart.name" .) }}
+{{- if .Values.fullnameOverride }}
+{{-   $fullname = .Values.fullnameOverride }}
+{{-   if (ne $name $thisName) }}
+{{-     $fullname = (replace $thisName $name $fullname) }}
+{{-   end }}
+{{- else }}
+{{-   $relname := .Release.Name }}
+{{-   $thisName := $thisName }}
+{{-   if (ne $name $thisName) }}
+{{-     $relname = (replace $thisName $name $relname) }}
+{{-     $thisName = $name }}
+{{-   end }}
+{{-   if contains $thisName $relname }}
+{{-     $fullname = $relname }}
+{{-   else }}
+{{-     $fullname = (printf "%s-%s" $relname $thisName) }}
+{{-   end }}
+{{- end }}
+{{- $fullname = (replace (printf "%s-%s" $name $name) $name $fullname) }}
+{{- include "common.util.nameString" $fullname }}
+{{- end }}
+
+{{- /*
+Create chart name and version as used by the chart label.
+*/ -}}
+{{- define "common.util.chart.chart" -}}
+{{- include "common.util.nameString" (printf "%s-%s" (include "common.util.chart.name" .) (include "common.util.versionString" .Chart.Version)) }}
+{{- end }}
+
+{{- /*
+Common labels
+https://intranet.genesys.com/pages/viewpage.action?spaceKey=AZURE&title=MultiCloud+Resource+Tagging+Policy
+https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
+*/ -}}
+{{- define "common.util.chart.labels" -}}
+helm.sh/chart: {{ include "common.util.chart.chart" . | quote }}
+{{ include "common.util.chart.selectorLabels" . }}
+app.kubernetes.io/version: {{ include "common.util.versionString" .Chart.AppVersion | quote }}
+{{- end -}}
+
+{{- /*
+Selector labels
+The labels must be immutable. They should not contain the version of the chart.
+*/ -}}
+{{- define "common.util.chart.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "common.util.chart.name" . | quote }}
+app.kubernetes.io/instance: {{ include "common.util.chart.fullname" . | quote }}
+service: {{ include "common.util.nameString" .Release.Namespace | quote }}
+servicename: {{ include "common.util.chart.name" . | quote }}
+tenant: {{ if .Values.tenant }}{{ include "common.util.nameString" .Values.tenant.sid | quote }}{{ else }}"shared"{{ end }}
+{{- end }}
+
+{{/*
+Create an object (service, pod) name.
+https://intranet.genesys.com/pages/viewpage.action?spaceKey=AZURE&title=Genesys+Engage+Azure+Naming+Convention
+*/}}
+{{- define "common.util.objectName" -}}
+{{- $fullname := (include "common.util.chart.fullname" .) }}
+{{- $name := (coalesce .chart (include "common.util.chart.name" .)) }}
+{{- if (ne (default $name .name) $name) }}
+{{-   if contains $name $fullname }}
+{{-     $fullname = (replace $name (printf "%s-%s" $name .name) $fullname) }}
+{{-   else }}
+{{-     $fullname = (printf "%s-%s" $fullname .name) }}
+{{-   end }}
+{{- end }}
+{{- include "common.util.nameString" $fullname }}
+{{- end }}
+
+{{- define "common.util.affinity" -}}
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          {{- range $key, $value := (include "common.util.chart.selectorLabels" . | fromYaml) }}
+          - key: {{ $key | quote }}
+            operator: In
+            values: [{{ $value | quote }}]
+          {{- end }}
+        topologyKey: "failure-domain.beta.kubernetes.io/zone"
+      weight: 100
+{{- end }}
+
+{{/*
+Create an application name.
+Example:
+    include "common.util.appName" (merge (dict "name" "CONTAINER") $) | quote
+This uses the following structure of values:
+    CONTAINER:
+      params:
+        selectAppByIndex: true|false
+        cfgApp: "..."
+        cfgAppTransform:
+          regex: "..."
+          subs: "..."
+The cfgAppTransform is optional and used for debugging purposes only.
+*/}}
+{{- define "common.util.appName" -}}
+{{- $name := .name }}
+{{- $container := (get .Values $name) }}
+{{- $params := (get $container "params") }}
+{{- $appname := (get $params "cfgApp") }}
+{{- if (not $appname) }}
+{{-   $appname = (include "common.util.objectName" .) }}
+{{-   if (get $params "selectAppByIndex" | default false) }}
+{{-     $appname = (printf "%s-" $appname) }}
+{{-   end }}
+{{- end }}
+{{- if .Values.tenant }}
+{{-   $appname = (replace (printf "-%s" .Values.tenant.id) "" $appname) }}
+{{-   $appname = (replace (printf "-%s" .Values.tenant.sid) "" $appname) }}
+{{- end }}
+{{- $appnametrans := (get $params "cfgAppTransform") }}
+{{- if $appnametrans }}
+{{-   $regex := (get $appnametrans "regex") }}
+{{-   $subs := (get $appnametrans "subs") }}
+{{-   $appname = (regexReplaceAll $regex $appname $subs) }}
+{{- end }}
+{{- $appname }}
+{{- end }}

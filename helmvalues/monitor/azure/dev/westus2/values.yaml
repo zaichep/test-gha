@@ -1,0 +1,3 @@
+# Helm chart values overrides only for Azure Dev westus2
+
+tenant: ""

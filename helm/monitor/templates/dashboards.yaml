@@ -1,0 +1,19 @@
+{{- if .Values.dashboards.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+    grafana_dashboard: "1"
+  name: {{ include "objectName" . }}-dashboards
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    k8s-sidecar-target-directory: /var/lib/grafana/dashboards/{{ .Release.Namespace }}
+data:
+  {{- $files := .Files }}
+  {{- range $path, $_ :=  $files.Glob  (printf "dashboards/**.json" ) }}
+  {{- $chart := (regexReplaceAll "^dashboards/([^/]+)/.*" $path "${1}") }}
+  {{ regexReplaceAll "^dashboards/" $path "" | replace "/" "-" }}: |-
+    {{- tpl ($files.Get $path) (merge (dict "chart" $chart) $) | nindent 4 }}
+  {{- end }}
+{{- end }}

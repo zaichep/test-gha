@@ -1,0 +1,160 @@
+# Cache component states when changes are merged into the main branch.
+
+name: Cache Components
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+
+  # Inititlize parameters ################################################
+  init:
+    outputs:
+      # Matrix of charts in JSON format
+      #  chart: [...]
+      #  environment: [...]
+      #  location: [...]
+      helm-chart-matrix: '${{ steps.params.outputs.helm-chart-matrix }}'
+      # Matrix of charts in JSON format
+      #  chart: [...]
+      #  environment: [...]
+      #  location: [...]
+      helm-chart-values-matrix: '${{ steps.params.outputs.helm-chart-values-matrix }}'
+
+    runs-on:
+      - self-hosted
+      - dev
+      - westus2
+
+    steps:
+      - name: Clean Workspace
+        uses: AutoModality/action-clean@d004b47eb728f2a83316fc70ba9a62ef97278013 # v1.1.0
+      - name: Clean up Runner
+        run: |
+          rm -f ~/.ssh/*
+          rm -f ~/.gitconfig
+        continue-on-error: true
+
+      - name: Checkout repository
+        uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f # v2.3.4
+
+      - name: Get Parameters
+        id: params
+        run: |
+          set -x
+          charts=($(find ${GITHUB_WORKSPACE}/helm -maxdepth 1 -mindepth 1 -type d -printf '%f\n'))
+          environments=(dev stage prod001)
+          locations=(westus2 eastus2)
+          charts_json=$(printf '"%s",' "${charts[@]}" | sed 's/^/[/;s/,$/]/')
+          environments_json=$(printf '"%s",' "${environments[@]}" | sed 's/^/[/;s/,$/]/')
+          locations_json=$(printf '"%s",' "${locations[@]}" | sed 's/^/[/;s/,$/]/')
+          echo "::set-output name=charts-json::${charts_json}"
+          echo "::set-output name=helm-chart-matrix::{\"chart\":${charts_json}}"
+          echo "::set-output name=helm-chart-values-matrix::{\"chart\":${charts_json},\"environment\":${environments_json},\"location\":${locations_json}}"
+
+  # Cache Helm Chart #####################################################
+  helm-chart:
+    needs: [ init ]
+    if: "!contains(needs.*.result, 'failure')"
+    strategy:
+      matrix: ${{ fromJSON(needs.init.outputs.helm-chart-matrix) }}
+      fail-fast: false
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clean Workspace
+        uses: AutoModality/action-clean@d004b47eb728f2a83316fc70ba9a62ef97278013 # v1.1.0
+      - name: Clean up Runner
+        run: |
+          rm -f ~/.ssh/*
+          rm -f ~/.gitconfig
+        continue-on-error: true
+
+      - name: Checkout repository
+        uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f # v2.3.4
+
+      - name: Get Info
+        id: chart-info
+        run: |
+          set -x
+          version=$(helm show chart helm/${{ matrix.chart }} | grep -e "^version:" | sed -E "s/[a-z:]+[[:blank:]]+//")
+          echo "::set-output name=version::${version}"
+          echo "::set-output name=hash::${{ hashFiles(
+            format('helm/{0}/**', matrix.chart),
+            'helm/common/**') }}"
+
+      - name: Get Modified
+        uses: actions/cache@0781355a23dac32fd3bac414512f4b903437991a # v2.1.3
+        with:
+          path: |
+            helm/modify-${{ matrix.chart }}-${{ steps.chart-info.outputs.hash }}.lock
+          key: modify-helm-chart-${{ matrix.chart }}-${{ steps.chart-info.outputs.hash }}
+
+      - name: Get Published
+        uses: actions/cache@0781355a23dac32fd3bac414512f4b903437991a # v2.1.3
+        with:
+          path: |
+            helm/publish-${{ matrix.chart }}-${{ steps.chart-info.outputs.version }}.lock
+          key: publish-helm-chart-${{ matrix.chart }}-${{ steps.chart-info.outputs.version }}
+
+      - name: Cache Result
+        if: success()
+        run: |
+          set +x
+          echo "${{ steps.chart-info.outputs.hash }}" \
+            > "helm/modify-${{ matrix.chart }}-${{ steps.chart-info.outputs.hash }}.lock"
+          echo "${{ steps.chart-info.outputs.hash }}" \
+            > "helm/publish-${{ matrix.chart }}-${{ steps.chart-info.outputs.version }}.lock"
+
+  # Cache Helm Chart Values ##############################################
+  helm-chart-values:
+    needs: [ init ]
+    if: "!contains(needs.*.result, 'failure')"
+    strategy:
+      matrix: ${{ fromJSON(needs.init.outputs.helm-chart-values-matrix) }}
+      fail-fast: false
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clean Workspace
+        uses: AutoModality/action-clean@d004b47eb728f2a83316fc70ba9a62ef97278013 # v1.1.0
+      - name: Clean up Runner
+        run: |
+          rm -f ~/.ssh/*
+          rm -f ~/.gitconfig
+        continue-on-error: true
+
+      - name: Checkout repository
+        uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f # v2.3.4
+
+      - name: Get Info
+        id: chart-info
+        run: |
+          set -x
+          version=$(helm show chart helm/${{ matrix.chart }} | grep -e "^version:" | sed -E "s/[a-z:]+[[:blank:]]+//")
+          echo "::set-output name=version::${version}"
+          echo "::set-output name=values-hash::${{ hashFiles(
+            format('helmvalues/{0}/*/*.yaml', matrix.chart),
+            format('helmvalues/{0}/*/{1}/*.yaml', matrix.chart, matrix.environment),
+            format('helmvalues/{0}/*/{1}/{2}/**', matrix.chart, matrix.environment, matrix.location),
+            'helm/common/*/*.yaml',
+            format('helmvalues/common/*/{0}/*.yaml', matrix.environment),
+            format('helmvalues/common/*/{0}/{1}/**', matrix.environment, matrix.location)) }}"
+
+      - name: Get Modified
+        uses: actions/cache@0781355a23dac32fd3bac414512f4b903437991a # v2.1.3
+        with:
+          path: |
+            helm/modify-values-${{ matrix.chart }}-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.values-hash }}.lock
+          key: modify-helm-chart-values-${{ matrix.chart }}-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.values-hash }}
+
+      - name: Cache Result
+        if: success()
+        run: |
+          set +x
+          echo "${{ steps.chart-info.outputs.values-hash }}" \
+            > "helm/modify-values-${{ matrix.chart }}-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.values-hash }}.lock"

@@ -1,0 +1,5 @@
+# Helm chart values overrides only for Azure Dev westus2 1100
+
+tenant:
+  id: "c51755db-0d75-0c76-24d1-27dc7012cfea"
+  sid: "1100"

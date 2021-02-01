@@ -1,0 +1,4 @@
+# Helm chart values overrides common to all Azure Dev locations
+
+image:
+  tag: Wbrt_Docker_MULTICLOUD

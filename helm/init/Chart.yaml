@@ -1,0 +1,10 @@
+apiVersion: v2
+name: init
+description: Init container
+type: application
+version: 0.1.6
+appVersion: 0.0.0
+dependencies:
+- name: common
+  version: 0.1.13
+  repository: file://../common

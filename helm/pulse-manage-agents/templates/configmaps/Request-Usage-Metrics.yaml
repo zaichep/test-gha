@@ -1,0 +1,15 @@
+{{- if .Values.grafanaDashboard.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "pulse-manage-agents.fullname" . }}-request-usage-metrics
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    k8s-sidecar-target-directory: /var/lib/grafana/dashboards/pulse
+  labels:
+    {{- include "pulse-manage-agents.labels" . | nindent 4 }}
+    grafana_dashboard: "1"
+data:
+  {{ template "pulse-manage-agents.fullname" . }}-request-usage-Mentrics-{{ .Release.Name }}.json: |-
+{{ tpl (.Files.Get "dashboards/Request-Usage-Metrics.json") . | indent 4 }}
+  {{- end }}

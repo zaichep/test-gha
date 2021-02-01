@@ -1,0 +1,198 @@
+# Validate components when creating a Pull Request.
+# See README.md for all supported parameters.
+
+name: Validate Components
+
+on:
+  pull_request:
+    branches:
+      - master
+    types: [opened, edited, synchronize]
+
+env:
+  PR_NUMBER: ${{ github.event.pull_request.number }}
+  JFROG_API_KEY: ${{ secrets.JFROG_API_KEY }}
+
+jobs:
+
+  # Inititlize parameters ################################################
+  init:
+    outputs:
+      # List of charts separated by spaces
+      charts: ${{ steps.params.outputs.charts }}
+      # List of tenants separated by spaces
+      tenants: ${{ steps.params.outputs.tenants }}
+      # Matrix of charts in JSON format
+      #  chart: [...]
+      #  environment: [...]
+      #  location: [...]
+      helm-chart-matrix: '${{ steps.params.outputs.helm-chart-matrix }}'
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clean Workspace
+        uses: AutoModality/action-clean@d004b47eb728f2a83316fc70ba9a62ef97278013 # v1.1.0
+      - name: Clean up Runner
+        run: |
+          rm -f ~/.ssh/*
+          rm -f ~/.gitconfig
+        continue-on-error: true
+
+      - name: Checkout repository
+        uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f # v2.3.4
+
+      - name: Get Parameters
+        id: params
+        run: |
+          set -x
+          charts=($(find ${GITHUB_WORKSPACE}/helm -maxdepth 1 -mindepth 1 -type d -not -name common -printf '%f\n'))
+          environments=()
+          locations=()
+          tenants=()
+          if [[ ${#environments[@]} -eq 0 ]]
+          then
+            environments=(dev)
+          fi
+          if [[ ${#locations[@]} -eq 0 ]]
+          then
+            locations=(westus2 eastus2)
+          fi
+          charts_json=$(printf '"%s",' "${charts[@]}" | sed 's/^/[/;s/,$/]/')
+          environments_json=$(printf '"%s",' "${environments[@]}" | sed 's/^/[/;s/,$/]/')
+          locations_json=$(printf '"%s",' "${locations[@]}" | sed 's/^/[/;s/,$/]/')
+          echo "::set-output name=charts::${charts[*]}"
+          echo "::set-output name=tenants::${tenants[*]}"
+          echo "::set-output name=helm-chart-matrix::{\"chart\":${charts_json},\"environment\":${environments_json},\"location\":${locations_json}}"
+
+  # Aggregate states of validation #######################################
+  build:
+    needs: [ init, helm-chart ]
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check Job Statuses
+        run: |
+          [[ "${{ contains(needs.*.result, 'failure') }}" == "false" ]]
+
+  # Validate Helm Chart ##################################################
+  helm-chart:
+    needs: [ init ]
+    strategy:
+      matrix: ${{ fromJSON(needs.init.outputs.helm-chart-matrix) }}
+      fail-fast: false
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clean Workspace
+        uses: AutoModality/action-clean@d004b47eb728f2a83316fc70ba9a62ef97278013 # v1.1.0
+      - name: Clean up Runner
+        run: |
+          rm -f ~/.ssh/*
+          rm -f ~/.gitconfig
+        continue-on-error: true
+
+      - name: Checkout Repository
+        uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f # v2.3.4
+
+      - name: Get Info
+        id: chart-info
+        run: |
+          set -x
+          version=$(helm show chart helm/${{ matrix.chart }} | grep -e "^version:" | sed -E "s/[a-z:]+[[:blank:]]+//")
+          echo "::set-output name=version::${version}"
+          echo "::set-output name=hash::${{ hashFiles(
+            format('helm/{0}/**', matrix.chart),
+            'helm/common/**') }}"
+          echo "::set-output name=values-hash::${{ hashFiles(
+            format('helmvalues/{0}/*/*.yaml', matrix.chart),
+            format('helmvalues/{0}/*/{1}/*.yaml', matrix.chart, matrix.environment),
+            format('helmvalues/{0}/*/{1}/{2}/**', matrix.chart, matrix.environment, matrix.location),
+            'helm/common/*/*.yaml',
+            format('helmvalues/common/*/{0}/*.yaml', matrix.environment),
+            format('helmvalues/common/*/{0}/{1}/**', matrix.environment, matrix.location)) }}"
+          echo "::set-output name=workflow-hash::${{ hashFiles(
+            '.github/workflows/validate-components.yml') }}"
+
+      - name: Get Published
+        uses: actions/cache@0781355a23dac32fd3bac414512f4b903437991a # v2.1.3
+        with:
+          path: |
+            helm/publish-${{ matrix.chart }}-${{ steps.chart-info.outputs.version }}.lock
+          key: ${{ runner.os }}-publish-helm-chart-${{ matrix.chart }}-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.version }}
+          restore-keys: publish-helm-chart-${{ matrix.chart }}-${{ steps.chart-info.outputs.version }}
+
+      - name: Check Published
+        id: published
+        run: |
+          value=false
+          if [ -e "helm/publish-${{ matrix.chart }}-${{ steps.chart-info.outputs.version }}.lock" ]
+          then
+            value=true
+          fi
+          set -x
+          echo "::set-output name=value::${value}"
+
+      - name: Get Chart Modified
+        uses: actions/cache@0781355a23dac32fd3bac414512f4b903437991a # v2.1.3
+        with:
+          path: |
+            helm/modify-${{ matrix.chart }}-${{ steps.chart-info.outputs.hash }}.lock
+          key: ${{ runner.os }}-modify-helm-chart-${{ matrix.chart }}-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.hash }}
+          restore-keys: modify-helm-chart-${{ matrix.chart }}-${{ steps.chart-info.outputs.hash }}
+
+      - name: Get Values Modified
+        uses: actions/cache@0781355a23dac32fd3bac414512f4b903437991a # v2.1.3
+        with:
+          path: |
+            helm/modify-values-${{ matrix.chart }}-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.values-hash }}.lock
+          key: ${{ runner.os }}-modify-helm-chart-values-${{ matrix.chart }}-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.values-hash }}
+          restore-keys: modify-helm-chart-${{ matrix.chart }}-${{ steps.chart-info.outputs.hash }}
+
+      - name: Get Workflow Modified
+        uses: actions/cache@0781355a23dac32fd3bac414512f4b903437991a # v2.1.3
+        with:
+          path: |
+            .github/workflows/modify-validate-components-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.workflow-hash }}.lock
+          key: ${{ runner.os }}-modify-workflow-validate-components-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.workflow-hash }}
+
+      - name: Check Modified
+        id: modified
+        run: |
+          value=true
+          if [ -e "helm/modify-${{ matrix.chart }}-${{ steps.chart-info.outputs.hash }}.lock" ]
+          then
+            if [ "${{ steps.published.outputs.value }}" = "true" ]
+            then
+              echo "ERROR: The chart ${{ matrix.chart }}-${version} is already published."
+              echo "ERROR: Consider to bump up chart's version."
+              exit 1
+            fi
+            if [ -e "helm/modify-values-${{ matrix.chart }}-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.values-hash }}.lock" ]
+            then
+              value=false
+              if [ -e ".github/workflows/modify-validate-components-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.workflow-hash }}.lock" ]
+              then
+                value=false
+              fi
+            fi
+          fi
+          set -x
+          echo "::set-output name=value::${value}"
+
+      - name: Do Action
+        if: steps.modified.outputs.value == 'true'
+        run: |
+          echo "Do action on ${{ matrix.chart }}-${{ matrix.environment }}-${{ matrix.location }}"
+
+      - name: Cache Result
+        if: success()
+        run: |
+          set +x
+          echo "${{ steps.chart-info.outputs.hash }}" \
+            > "helm/modify-${{ matrix.chart }}-${{ steps.chart-info.outputs.hash }}.lock"
+          echo "${{ steps.chart-info.outputs.values-hash }}" \
+            > "helm/modify-values-${{ matrix.chart }}-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.values-hash }}.lock"
+          touch ".github/workflows/modify-validate-components-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.workflow-hash }}.lock"

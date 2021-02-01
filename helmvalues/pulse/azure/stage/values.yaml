@@ -1,0 +1,13 @@
+# Helm chart values overrides common to all Azure Stage locations
+
+image:
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: 9.0.100.01
+
+debug:
+  enabled: true
+
+options:
+ javaOpts: -XX:+UseContainerSupport -XX:MaxRAMPercentage=80.0 -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=localhost:5005
+ forceOriginRedirect: false

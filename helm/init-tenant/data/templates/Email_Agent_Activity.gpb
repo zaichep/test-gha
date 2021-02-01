@@ -1,0 +1,410 @@
+definition {
+  guid: "000000000000-0000-0000-0000-0000000a"
+  layout_type: ltPCREGULAR
+  name: "Email Agent Activity"
+  description: "A report presenting agent or agent group activity as it relates to the processing of Email type contacts."
+  is_read_only: true
+  refresh_interval: 60
+  column {
+    id: "_Object$ID"
+    category: ccDIMENSION
+    type: ctFORMULA
+    vt: vINT
+    is_delta_key: true
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectID"
+    }
+  }
+  column {
+    id: "_Object$Type"
+    category: ccDIMENSION
+    type: ctFORMULA
+    vt: vINT
+    is_delta_key: true
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectType"
+    }
+  }
+  column {
+    id: "_Object$Name"
+    category: ccDIMENSION
+    type: ctFORMULA
+    vt: vSTR
+    format: "string"
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectName"
+    }
+  }
+  column {
+    id: "Total_Login_Time"
+    label: "Login Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total time that monitored agents were logged in.. Applied to GroupAgents and GroupPlaces, this stat type calculates the total login time for all the agents belonging to the specified group."
+    format: "time"
+    statistic {
+      stat_type_name: "Total_Login_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Email_Ready_Time"
+    label: "Ready Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total time this agent spent waiting for the next email."
+    format: "time"
+    statistic {
+      stat_type_name: "TotalReadyDNStatusTime"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "EMAIL_MEDIA"
+    }
+  }
+  column {
+    id: "Email_Not_Ready_Time"
+    label: "Not Ready Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total time this agent spent in a not Ready status for email media."
+    format: "time"
+    statistic {
+      stat_type_name: "TotalNotReadyDNStatusTime"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "EMAIL_MEDIA"
+    }
+  }
+  column {
+    id: "Email_Agent_Ocupancy"
+    label: "% Email Occupancy"
+    category: ccMEASURE
+    type: ctFORMULA
+    vt: vDBL
+    description: "The ratio of time handling email sessions to the total login time of the Agent."
+    format: "percent"
+    formula {
+      type: ftPCSCRIPT
+      text: "if (Data.Total_Login_Time.Value > 0) Result = 100 * Data.Email_Handle_Time.Value / Data.Total_Login_Time.Value; else Result = 0;"
+    }
+  }
+  column {
+    id: "Email_Ring_Time"
+    label: "Ringing Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total amount of time that email popup was alerting the agent desktop."
+    format: "time"
+    statistic {
+      stat_type_name: "Total_Ringing_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "EMAIL_MEDIA"
+    }
+  }
+  column {
+    id: "Email_Handle_Time"
+    label: "Handle Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total amount of time the agent spent handling email (The duration is not restricted to the agent focus time)."
+    format: "time"
+    statistic {
+      stat_type_name: "Interactions_Processing_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "EMAIL_MEDIA"
+    }
+  }
+  column {
+    id: "Email_Avg_Handle_Time"
+    label: "AHT"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The average amount of time the agent spent handling email (The duration is not restricted to the agent focus time)."
+    format: "time"
+    statistic {
+      stat_type_name: "Average_Processing_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "EMAIL_MEDIA"
+    }
+  }
+  column {
+    id: "Email_Offered"
+    label: "Offered"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of emails that were offered for processing to this resource or agent group during the specified period. This stat type counts interactions both offered by business routing strategies and other agents."
+    format: "integer"
+    statistic {
+      stat_type_name: "Interactions_Offered"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "EMAIL_MEDIA"
+    }
+  }
+  column {
+    id: "Email_Offered_60M"
+    label: "Offered (hr)"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of emails that were offered for processing to this resource or agent group during the specified period. This stat type counts interactions both offered by business routing strategies and other agents."
+    format: "integer"
+    statistic {
+      stat_type_name: "Interactions_Offered"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      time_profile: "LastHour"
+      filter: "EMAIL_MEDIA"
+    }
+  }
+  column {
+    id: "Email_Perc_Accepted"
+    label: "% Accepted"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vDBL
+    description: "The percentage of emails accepted by the agent based on total of emails proposed."
+    format: "percent"
+    statistic {
+      stat_type_name: "Chat_Perc_Accepted"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "EMAIL_MEDIA"
+    }
+  }
+  column {
+    id: "Email_Perc_Rejected"
+    label: "% Rejected"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vDBL
+    description: "The percentage of emails rejected by the agent based on total of emails proposed."
+    format: "percent"
+    statistic {
+      stat_type_name: "Ixn_Perc_Rejected"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "EMAIL_MEDIA"
+    }
+  }
+  column {
+    id: "Email_Perc_Missed"
+    label: "% Missed"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vDBL
+    description: "The percentage of emails missed by the agent based on total of emails proposed."
+    format: "percent"
+    statistic {
+      stat_type_name: "Ixn_Perc_Missed"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "EMAIL_MEDIA"
+    }
+  }
+  column {
+    id: "Email_Accepted"
+    label: "Accepted"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of emails that were offered for processing and that were accepted during the specified period."
+    format: "integer"
+    statistic {
+      stat_type_name: "Interactions_Accepted"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "EMAIL_MEDIA"
+    }
+  }
+  column {
+    id: "Email_Accepted_60M"
+    label: "Accepted (hr)"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of emails that were offered for processing and that were accepted during the specified period."
+    format: "integer"
+    statistic {
+      stat_type_name: "Interactions_Accepted"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      time_profile: "LastHour"
+      filter: "EMAIL_MEDIA"
+    }
+  }
+  column {
+    id: "Email_Rejected"
+    label: "Rejected"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of emails that were offered for processing and that were rejected during the specified period."
+    format: "integer"
+    statistic {
+      stat_type_name: "Interactions_Rejected"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "EMAIL_MEDIA"
+    }
+  }
+  column {
+    id: "Email_Rejected_60M"
+    label: "Rejected (hr)"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of emails that were offered for processing and that were rejected during the specified period."
+    format: "integer"
+    statistic {
+      stat_type_name: "Interactions_Rejected"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      time_profile: "LastHour"
+      filter: "EMAIL_MEDIA"
+    }
+  }
+  column {
+    id: "Email_Missed"
+    label: "Missed"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of emails that were offered for processing and that were missed during the specified period."
+    format: "integer"
+    statistic {
+      stat_type_name: "Interactions_Timed_Out"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "EMAIL_MEDIA"
+    }
+  }
+  column {
+    id: "Email_Missed_60M"
+    label: "Missed (hr)"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of emails that were offered for processing and that were missed during the specified period."
+    format: "integer"
+    statistic {
+      stat_type_name: "Interactions_Timed_Out"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      time_profile: "LastHour"
+      filter: "EMAIL_MEDIA"
+    }
+  }
+  column {
+    id: "Email_Terminated"
+    label: "Done"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of inbound emails that were terminated by an agent or agent group during the specified period."
+    format: "integer"
+    statistic {
+      stat_type_name: "Inbound_Interactions_Stopped"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "EMAIL_MEDIA"
+    }
+  }
+  column {
+    id: "Email_Terminated_60M"
+    label: "Done (hr)"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of inbound emails that were terminated by an agent or agent group during the specified period."
+    format: "integer"
+    statistic {
+      stat_type_name: "Inbound_Interactions_Stopped"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      time_profile: "LastHour"
+      filter: "EMAIL_MEDIA"
+    }
+  }
+  column {
+    id: "Email_Perc_Terminated"
+    label: "% Done"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vDBL
+    description: "The percentage of emails terminated by the agent based on total of emails proposed."
+    format: "percent"
+    statistic {
+      stat_type_name: "Inbound_Inx_Perc_Stopped"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "EMAIL_MEDIA"
+    }
+  }
+  column {
+    id: "Email_Perc_Transfers_Made"
+    label: "% Trans Made"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vDBL
+    description: "The percentage of emails transfered to another agent based on total of emails proposed."
+    format: "percent"
+    statistic {
+      stat_type_name: "Ixn_Perc_Transfers_Made"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "EMAIL_MEDIA"
+    }
+  }
+  column {
+    id: "Email_Transfers_Made"
+    label: "Transfers Made"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of email transfers made by this agent or agent group during the specified period. Applied to GroupAgents or GroupPlaces, this stat type calculates the total number of transfers made by all of the agents belonging to the respective group. This stat type counts each transfer instance separately including those where the agent transfers the same interaction more than once."
+    format: "integer"
+    statistic {
+      stat_type_name: "Total_Number_Transfers_Made"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "EMAIL_MEDIA"
+    }
+  }
+  column {
+    id: "Email_Unsolicited_Sent"
+    label: "Unsolicited sent"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of emails sent by the agent without being solicited by customers."
+    format: "integer"
+    statistic {
+      stat_type_name: "Interactions_Initiated_Out"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "EMAIL_MEDIA"
+    }
+  }
+  collector_def {
+    allowed_object_type: SObjectAgentPlace
+    allowed_object_type: SObjectAgent
+    allowed_object_type: SObjectGroupAgents
+    allowed_object_type: SObjectGroupPlaces
+  }
+  collector_label: "multimedia"
+}

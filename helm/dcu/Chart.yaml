@@ -1,0 +1,10 @@
+apiVersion: v2
+name: dcu
+description: Pulse Data Collection Unit
+type: application
+version: 0.0.39
+appVersion: 9.0.006.08
+dependencies:
+- name: common
+  version: 0.1.13
+  repository: file://../common

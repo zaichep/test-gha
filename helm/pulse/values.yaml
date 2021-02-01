@@ -1,0 +1,155 @@
+# Default values for pulse.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# tenant identification, or empty for shared deployment
+tenant: ""
+
+# deployment parameters
+deployment:
+  # deployment type: local|azure (TBD more)
+  type: local
+
+image:
+  name: pulse
+  tag: ""
+  pullPolicy: IfNotPresent
+  repository: ""
+
+replicaCount: 2
+
+config:
+  postgresConfig: ""
+  postgresSecret: ""
+  redisConfig: ""
+  redisSecret: ""
+  gwsSecret: ""
+  dbName: pulse
+
+monitoring:
+  enabled: true
+
+debug:
+  enabled: false
+  port: 5005
+
+options:
+  # for >= Java 10
+  # https://medium.com/adorsys/usecontainersupport-to-the-rescue-e77d6cfea712
+  javaOpts: -XX:+UseContainerSupport -XX:MaxRAMPercentage=80.0
+  # for < Java 10
+  #javaOpts: -XX:+UseCGroupMemoryLimitForHeap
+  # for extra options not listed below
+  appOpts: ""
+  # http port
+  port: 8080
+  # management and monitoring port
+  managementPort: 8090
+  # http context
+  context: /pulse
+  # management and monitoring context
+  managementContext: /actuator
+  # monitoring endpoint
+  prometheusEndpoint: /prometheus
+  # metrics tag: deployment code
+  metricsTagsDeploymentCode: pulse
+  # metrics tag: application name
+  metricsTagsApplicationName: pulse
+  # install OOB templates
+  installTemplates: false
+  # editable OOB templates
+  editableTemplates: true
+  # health check timeout in seconds
+  healthExpireTimeout: 30
+  # limits the number of widgets per user
+  maxWidgetsPerUser: 0
+  # limits the number of tabs per user
+  maxTabsPerUser: 0
+  # do not recheck token within seconds
+  tokenCacheTimeout: 600
+  # limits the token cache size
+  tokenCacheSize: -1
+  # terminate all user sessions on logout
+  userLogoutGlobal: false
+  # redirect user after logout
+  userLogoutRedirectUrl: 
+  # force redirect to origin rather than using URL provided by client
+  forceOriginRedirect: true
+  # disable privileges check bypass for default account
+  disableDefaultAccount: true
+  # append to log
+  accessLogAppend: true
+  # enable access log
+  accessLogEnable: true
+  # enable extended NCSA format
+  accessLogExtended: false
+  # enable logging of the request cookies
+  accessLogCookies: false
+  # enable logging of request processing time
+  accessLogLatency: false
+  # enable logging of the request hostname
+  accessLogServer: false
+  # number of days before rotated log files are deleted
+  accessLogRetentionPeriod: 31
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext:
+  runAsUser: 500
+  runAsGroup: 500
+  fsGroup: 500
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+  managementPort: 8090
+  debugPort: 5005
+
+ingress:
+  enabled: true
+
+gateway:
+  enabled: true
+
+resources:
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  limits:
+    memory: 4Gi
+    cpu: 1
+  requests:
+    memory: 4Gi
+    cpu: 1
+
+autoscaling:
+  enabled: false
+
+priorityClassName: ""
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

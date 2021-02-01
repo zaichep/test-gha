@@ -1,0 +1,103 @@
+{{- $fullName := include "init-tenant.fullname" . -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $fullName }}-job
+  annotations:
+    helm.sh/hook: "pre-install,pre-upgrade"
+    helm.sh/hook-weight: "1"
+    helm.sh/hook-delete-policy: "before-hook-creation"
+  labels:
+    {{- include "init-tenant.labels" . | nindent 4 }}
+spec:
+  template:
+    metadata:
+      labels:
+        {{- include "init-tenant.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      dnsPolicy: {{ .Values.dnsPolicy | default "ClusterFirst" }}
+      {{- with .Values.dnsConfig }}
+      dnsConfig:
+        {{- toYaml . | nindent 8}}
+      {{- end }}
+      serviceAccountName: {{ include "init-tenant.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      restartPolicy: Never
+      containers:
+        - name: init
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ printf "%s%s:%s" .Values.image.repository .Values.image.name (coalesce .Values.image.tag .Chart.AppVersion ) | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: [ "sh", "-c", "/app/init-tenant.sh"]
+          env: 
+            - name: APPLICATION_KEY
+              value: {{ .Values.tenant.sid | quote }}
+            - name: DB_NAME
+              value: {{ .Values.config.dbName | quote }}
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.config.postgresConfig }}
+                  key: META_DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.config.postgresConfig }}
+                  key: META_DB_PORT
+            - name: DB_SSL_MODE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.config.postgresConfig }}
+                  key: META_DB_SSL_MODE
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.postgresSecret }}
+                  key: META_DB_ADMIN
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.postgresSecret }}
+                  key: META_DB_ADMINPWD
+            - name: DB_USERNAME
+              value: "$(DB_USER)@$(DB_HOST)"
+            - name: TEMPLATES_LIST_FILE
+              value: "/data/templates.list"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            {{- range .Values.templates }}
+            - name: {{ $fullName }}-config-volume
+              mountPath: /data/{{ . }}
+              subPath: {{ . }}
+            {{- end }}
+            - name: {{ $fullName }}-config-volume
+              mountPath: /data/templates.list
+              subPath: templates.list
+
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName }}
+      {{- end }}
+
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      volumes:
+        - name: {{ $fullName }}-config-volume
+          configMap:
+            name: {{ $fullName }}-templates-config
+  
+  backoffLimit: {{ .Values.backoffLimit }}

@@ -1,0 +1,441 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  name: {{ include "objectName" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  clusterIP: None
+  ports:
+  {{- range $key, $value := .Values.heartbeat.ports }}
+  - name: heartbeat-{{ $key }}
+    port: {{ $value }}
+  {{- end }}
+  {{- range $key, $value := .Values.statserver.ports }}
+  - name: statserver-{{ $key }}
+    port: {{ $value }}
+  {{- end }}
+  selector:
+    {{- include "chart.selectorLabels" . | nindent 4 }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  name: {{ include "objectName" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "chart.selectorLabels" . | nindent 6 }}
+
+  serviceName: {{ include "objectName" . }}
+
+  volumeClaimTemplates:
+  {{- range .Values.volumeClaims }}
+  - metadata:
+      labels:
+        {{- include "chart.selectorLabels" $ | nindent 8 }}
+      name: {{ .name }}
+      namespace: {{ $.Release.Namespace }}
+    spec:
+      accessModes: {{ toYaml .accessModes | nindent 8 }}
+      resources:
+        requests:
+          storage: {{ .capacity }}
+      storageClassName: {{ .class }}
+  {{- end}}
+
+  template:
+    metadata:
+      annotations:
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "chart.selectorLabels" . | nindent 8 }}
+        aadpodidbinding: {{ .Release.Namespace }}-identity
+      namespace: {{ .Release.Namespace | quote }}
+    spec:
+      serviceAccountName: {{ include "objectName" . | quote }}
+      {{- if .Values.affinity }}
+      affinity: {{- toYaml .Values.affinity | nindent 8 }}
+      {{- else }}
+      {{- include "chart.affinity" . | nindent 6 }}
+      {{- end }}
+
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      dnsPolicy: {{ .Values.dnsPolicy | default "ClusterFirst" }}
+      {{- with .Values.dnsConfig }}
+      dnsConfig: {{- toYaml . | nindent 8}}
+      {{- end }}
+
+      volumes:
+      {{- range .Values.volumes }}
+      - {{- toYaml . | nindent 8 }}
+      {{- end}}
+      {{- if .Values.config.mountSecrets }}
+      {{- include "common.secrets.teamSecretVolume" . | nindent 6 }}
+      {{- end }}
+      - name: logs
+        hostPath:
+          path: /mnt/log
+
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+
+      containers:
+      #################################################################
+      - {{- include "common.csproxy" (list .) | nindent 8 }}
+
+      #################################################################
+      - name: statserver
+        env:
+        - name: K8S_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: TENANT_SID
+          value: {{ .Values.tenant.sid | quote }}
+        {{- with .Values.statserver.params }}
+        - name: APP_NAME
+          value: {{ include "cfgAppName" (merge (dict "name" "statserver") $) | quote }}
+        - name: SELECT_APP_BY_INDEX
+          value: {{ .selectAppByIndex | quote }}
+        - name: CFG_HOST
+          value: {{ if .cfgHost }}{{ .cfgHost | quote }}{{ else }}"localhost"{{ end }}
+        - name: CFG_PORT
+          value: {{ if .cfgPort }}{{ .cfgPort | quote }}{{ else }}{{ $.Values.csproxy.ports.default | quote }}{{ end }}
+        {{- end}}
+        image: {{ printf "%s%s:%s" .Values.image.repository .Values.statserver.image.name (coalesce .Values.statserver.image.tag .Values.image.tag .Chart.AppVersion ) | quote }}
+        imagePullPolicy: {{ .Values.statserver.image.pullPolicy | default .Values.image.pullPolicy }}
+        {{- if not .Values.statserver.probes.disabled }}
+        startupProbe:
+          httpGet:
+            path: /genesys/statserver/statfile
+            port: http
+          {{- with .Values.statserver.probes.startupProbe }}
+          {{- toYaml . | nindent 10 }}
+          {{- end}}
+        livenessProbe:
+          # TODO: Update this to json analysis
+          httpGet:
+            path: /genesys/statserver/statfile
+            port: http
+          {{- with .Values.statserver.probes.livenessProbe }}
+          {{- toYaml . | nindent 10 }}
+          {{- end}}
+        readinessProbe:
+          # TODO: Update this to json analysis
+          httpGet:
+            path: /genesys/statserver/statfile
+            port: http
+          {{- with .Values.statserver.probes.readinessProbe }}
+          {{- toYaml . | nindent 10 }}
+          {{- end}}
+        {{- end}}
+        ports:
+        {{- range $key, $value := .Values.statserver.ports }}
+        - name: {{ $key }}
+          containerPort: {{ $value }}
+          protocol: TCP
+        {{- end }}
+        {{- with .Values.statserver.resources }}
+        {{- if not .disabled }}
+        resources:
+          requests: {{ toYaml .requests | nindent 12 }}
+          limits: {{ toYaml .limits | nindent 12 }}
+        {{- end}}
+        {{- end}}
+        securityContext:
+          {{- toYaml .Values.statserver.securityContext | nindent 10 }}
+        {{- with .Values.statserver.volumeMounts }}
+        volumeMounts: {{ toYaml . | nindent 10 }}
+        {{- end}}
+          - name: logs
+            mountPath: /data/log
+
+      #################################################################
+      - name: collector
+        env:
+        - name: K8S_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: TENANT_SID
+          value: {{ .Values.tenant.sid | quote }}
+        {{- with .Values.collector.params }}
+          # Note, Pulse Collector can work with single application
+        - name: APP_NAME
+          value: {{ include "cfgAppName" (merge (dict "name" "collector") $) | quote }}
+        - name: SELECT_APP_BY_INDEX
+          value: {{ .selectAppByIndex | quote }}
+        - name: CFG_HOST
+          value: {{ if .cfgHost }}{{ .cfgHost | quote }}{{ else }}"localhost"{{ end }}
+        - name: CFG_PORT
+          value: {{ if .cfgPort }}{{ .cfgPort | quote }}{{ else }}{{ $.Values.csproxy.ports.default | quote }}{{ end }}
+        {{- end}}
+        {{- with .Values.config }}
+        - name: PGMODE
+          value: require
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .postgresConfig }}
+              key: META_DB_HOST
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .postgresConfig }}
+              key: META_DB_PORT
+        {{- if not .mountSecrets }}
+        - name: DO_NOT_USE_K8S_SECRETS
+          value: "true"
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ .postgresSecret }}
+              key: META_DB_ADMIN
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .postgresSecret }}
+              key: META_DB_ADMINPWD
+        {{- else }}
+        {{- include "common.secrets.injectDBUser" "DB_USER_SECRET" | nindent 8 }}
+        {{- include "common.secrets.injectDBPassword" "DB_PASSWORD_SECRET" | nindent 8 }}
+        {{- end }}
+        - name: DB_NAME
+          value: {{ .dbName | quote }}
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .redisConfig }}
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .redisConfig }}
+              key: REDIS_PORT
+        - name: REDIS_ENABLE_SSL
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .redisConfig }}
+              key: REDIS_ENABLE_SSL
+        {{- if not .mountSecrets }}
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .redisSecret }}
+              key: REDIS_KEY
+        {{- else }}
+        {{- include "common.secrets.injectRedisPassword" "REDIS_PASSWORD_SECRET" | nindent 8 }}
+        {{- end}}
+        {{- end}}
+        - name: collector_dap_user_property__default__dbhostname
+          value: "$(DB_HOST)"
+        - name: collector_dap_user_property__default__dbserver
+          value: "$(DB_HOST)"
+        - name: collector_dap_user_property__default__dbname
+          value: "$(DB_NAME)"
+        - name: collector_dap_user_property__default__password
+          value: "$(DB_PASSWORD)"
+        - name: NO_SCS
+          value: "true"
+        - name: CSPROXY
+          value: "true"
+        - name: CFG_HOST_BACKUP
+          value: "$(CFG_HOST)"
+        - name: CFG_PORT_BACKUP
+          value: "$(CFG_PORT)"
+        - name: collector_use_env_options
+          value: "1"
+        - name: collector_dap_use_env_options
+          value: "1"
+        - name: collector__collector__application_id
+          value: {{ .Values.tenant.sid | quote }}
+        - name: collector__transport_redis__host
+          value: "$(REDIS_HOST)"
+        - name: collector__transport_redis__port
+          value: "$(REDIS_PORT)"
+        - name: collector__transport_redis__password
+          value: "$(REDIS_PASSWORD)"
+        - name: collector__transport_redis__enable_tls
+          value: "$(REDIS_ENABLE_SSL)"
+        {{- range $name, $value := .Values.collector.appOptions }}
+        - name: {{ $name }}
+          value: {{ $value | quote }}
+        {{- end}}
+        # Log to ephemeral storage
+        - name: collector__log__all
+          value: "/home/genesys/log/$(APP_NAME)"
+        - name: collector__log_db__all
+          value: "/home/genesys/log/$(APP_NAME)-db"
+        image: {{ printf "%s%s:%s" .Values.image.repository .Values.collector.image.name (coalesce .Values.collector.image.tag .Values.image.tag .Chart.AppVersion ) | quote }}
+        imagePullPolicy: {{ .Values.collector.image.pullPolicy | default .Values.image.pullPolicy }}
+        {{- if not .Values.collector.probes.disabled }}
+        {{- $heartbeatFolder := .Values.collector.appOptions.collector__heartbeat__heartbeat_folder }}
+        {{- $heartbeatName := (include "cfgAppName" (merge (dict "name" "collector") .)) }}
+        {{- $heartbeatPeriod := .Values.collector.appOptions.collector__heartbeat__heartbeat_period }}
+        startupProbe:
+          exec:
+            command:
+            - bash
+            - -c
+            - pec/scripts/k8s/collector_k8s_probe.sh -f {{ $heartbeatFolder }}/{{ $heartbeatName }}{{ if .Values.collector.params.selectAppByIndex }}*{{ end }}.heartbeat -t {{ $heartbeatPeriod }}
+          {{- with .Values.collector.probes.startupProbe }}
+          {{- toYaml . | nindent 10 }}
+          {{- end}}
+        livenessProbe:
+          exec:
+            command:
+            - bash
+            - -c
+            - pec/scripts/k8s/collector_k8s_probe.sh -f {{ $heartbeatFolder }}/{{ $heartbeatName }}{{ if .Values.collector.params.selectAppByIndex }}*{{ end }}.heartbeat -t {{ $heartbeatPeriod }}
+          {{- with .Values.collector.probes.livenessProbe }}
+          {{- toYaml . | nindent 10 }}
+          {{- end}}
+        {{- end}}
+        ports:
+        {{- range $key, $value := .Values.collector.ports }}
+        - name: {{ $key }}
+          containerPort: {{ $value }}
+          protocol: TCP
+        {{- end }}
+        {{- with .Values.collector.resources }}
+        {{- if not .disabled }}
+        resources:
+          requests: {{ toYaml .requests | nindent 12 }}
+          limits: {{ toYaml .limits | nindent 12 }}
+        {{- end}}
+        {{- end}}
+        securityContext:
+          {{- toYaml .Values.collector.securityContext | nindent 10 }}
+        {{- with .Values.collector.volumeMounts }}
+        volumeMounts: {{ toYaml . | nindent 10 }}
+        {{- end}}
+          {{- if .Values.config.mountSecrets }}
+          {{- include "common.secrets.teamSecretVolumeMount" . | nindent 10 }}
+          {{- end }}
+          - name: logs
+            mountPath: /data/log
+
+      #################################################################
+      - name: heartbeat
+        image: {{ printf "%s:%s" .Values.heartbeat.image.name (coalesce .Values.heartbeat.image.tag .Values.image.tag ) | quote }}
+        imagePullPolicy: {{ .Values.heartbeat.image.pullPolicy | default .Values.image.pullPolicy }}
+        {{- if not .Values.heartbeat.probes.disabled }}
+        env:
+        - name: K8S_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: TENANT_SID
+          value: {{ .Values.tenant.sid | quote }}
+        startupProbe:
+          httpGet:
+            path: /probe
+            port: default
+          {{- with .Values.heartbeat.probes.startupProbe }}
+          {{- toYaml . | nindent 10 }}
+          {{- end}}
+        livenessProbe:
+          httpGet:
+            path: /probe
+            port: default
+          {{- with .Values.heartbeat.probes.livenessProbe }}
+          {{- toYaml . | nindent 10 }}
+          {{- end}}
+        readinessProbe:
+          httpGet:
+            path: /probe
+            port: default
+          {{- with .Values.heartbeat.probes.readinessProbe }}
+          {{- toYaml . | nindent 10 }}
+          {{- end}}
+        {{- end}}
+        ports:
+        {{- range $key, $value := .Values.heartbeat.ports }}
+        - name: {{ $key }}
+          containerPort: {{ $value }}
+          protocol: TCP
+        {{- end }}
+        {{- with .Values.heartbeat.resources }}
+        {{- if not .disabled }}
+        resources:
+          requests: {{ toYaml .requests | nindent 12 }}
+          limits: {{ toYaml .limits | nindent 12 }}
+        {{- end}}
+        {{- end}}
+        securityContext:
+          {{- toYaml .Values.heartbeat.securityContext | nindent 10 }}
+        {{- with .Values.heartbeat.volumeMounts }}
+        volumeMounts: {{ toYaml . | nindent 10 }}
+        {{- end}}
+          - name: logs
+            mountPath: /data/log
+
+      #################################################################
+      - name: monitor-sidecar
+        env:
+        - name: K8S_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NAMESPACE
+          value: {{ .Release.Namespace | quote }}
+        - name: TENANT_SID
+          value: {{ .Values.tenant.sid | quote }}
+        - name: SS_URL
+          value: {{ printf "http://localhost:%d/genesys/statserver/v1/statfile" (.Values.statserver.ports.http | int) | quote }}
+        - name: COL_URL
+          value: {{ printf "http://localhost:%d/%s.heartbeat" (.Values.heartbeat.ports.default | int) (include "cfgAppName" (merge (dict "name" "collector") $)) | quote }}
+        {{- with .Values.monitorSidecar.params }}
+        - name: DCU_POLL_PERIOD
+          value: {{ .pollPeriod | quote }}
+        - name: INITIAL_DELAY
+          value: {{ .initialDelay | quote }}
+        - name: PUSHGATE_URL
+          value: {{ .pushGateUrl | quote }}
+        {{- end}}
+        image: {{ printf "%s%s:%s" .Values.image.repository .Values.monitorSidecar.image.name (coalesce .Values.monitorSidecar.image.tag .Values.image.tag .Chart.AppVersion ) | quote }}
+        imagePullPolicy: {{ .Values.monitorSidecar.image.pullPolicy | default .Values.image.pullPolicy }}
+        {{- with .Values.monitorSidecar.resources }}
+        {{- if not .disabled }}
+        resources:
+          requests: {{ toYaml .requests | nindent 12 }}
+          limits: {{ toYaml .limits | nindent 12 }}
+        {{- end}}
+        {{- end}}
+        securityContext:
+          {{- toYaml .Values.monitorSidecar.securityContext | nindent 10 }}
+
+      initContainers:
+      #################################################################
+
+      - name: init-heartbeat
+        image: {{ printf "%s:%s" .Values.heartbeatInit.image.name (coalesce .Values.heartbeatInit.image.tag .Values.image.tag ) | quote }}
+        imagePullPolicy: {{ .Values.heartbeatInit.image.pullPolicy | default .Values.image.pullPolicy }}
+        command: ['sh', '-c', 'touch "{{ (first .Values.heartbeatInit.volumeMounts).mountPath }}/probe"']
+        securityContext:
+          {{- toYaml .Values.heartbeatInit.securityContext | nindent 10 }}
+        {{- with .Values.heartbeatInit.volumeMounts }}
+        volumeMounts: {{ toYaml . | nindent 10 }}
+        {{- end}}
+          - name: logs
+            mountPath: /data/log

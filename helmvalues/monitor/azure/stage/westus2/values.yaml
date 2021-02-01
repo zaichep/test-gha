@@ -1,0 +1,3 @@
+# Helm chart values overrides only for Azure Stage westus2
+
+tenant: ""

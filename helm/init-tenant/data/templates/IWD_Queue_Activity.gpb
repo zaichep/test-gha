@@ -1,0 +1,143 @@
+definition {
+  guid: "000000000000-0000-0000-0000-00000010"
+  layout_type: ltPCREGULAR
+  name: "IWD Queue Activity"
+  description: "A queue report presenting an overview of current or near real-time activity associated with the iWD queues."
+  is_read_only: true
+  refresh_interval: 60
+  column {
+    id: "_Object$ID"
+    category: ccDIMENSION
+    type: ctFORMULA
+    is_delta_key: true
+    vt: vINT
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectID"
+    }
+  }
+  column {
+    id: "_Object$Type"
+    category: ccDIMENSION
+    type: ctFORMULA
+    is_delta_key: true
+    vt: vINT
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectType"
+    }
+  }
+  column {
+    id: "_Object$Name"
+    category: ccDIMENSION
+    format: "string"
+    vt: vSTR
+    type: ctFORMULA
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectName"
+    }
+  }
+  column {
+    id: "Work_Item_Entered"
+    label: "Entered"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of work item interactions that entered the queue during the specified period."
+    format: "integer"
+    statistic {
+      stat_type_name: "MediaX_Total_Entered_Queue_workitem"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Work_Item_Stopped"
+    label: "Stopped"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of work item interactions for which processing has stopped while in this queue during the reported time period."
+    format: "integer"
+    statistic {
+      stat_type_name: "MediaX_Stopped_Processing_In_Queue_workitem"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Work_Item_Moved"
+    label: "Moved"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of work items that were moved from this queue to any other queue during the specified period."
+    format: "integer"
+    statistic {
+      stat_type_name: "MediaX_Total_Moved_From_Queue_workitem"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Max_Work_Item_Processed"
+    label: "Max Processed"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The maximum number of work items that either were awaiting processing or were in processing within the contact center during the specified period."
+    format: "integer"
+    statistic {
+      stat_type_name: "MediaX_Maximum_Interactions_In_Queue_workitem"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Min_Work_Item_Processed"
+    label: "Min Processed"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The minimum number of work items that were either waiting processing or in processing within the specified period."
+    format: "integer"
+    statistic {
+      stat_type_name: "MediaX_Minimum_Interactions_In_Queue_workitem"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Work_Item_Waiting"
+    label: "Current Waiting"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of work item interactions that are currently waiting to be processed."
+    format: "integer"
+    statistic {
+      stat_type_name: "MediaX_Current_Waiting_Processing_In_Queue_workitem"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Work_Item_In_Queue"
+    label: "Current In Queue"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of work item interactions that are currently in interaction queue."
+    format: "integer"
+    statistic {
+      stat_type_name: "MediaX_Current_In_Queue_workitem"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  collector_def {
+    allowed_object_type: SObjectStagingArea
+  }
+  collector_label: "multimedia"
+}

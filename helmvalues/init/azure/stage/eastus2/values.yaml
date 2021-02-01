@@ -1,0 +1,16 @@
+# Helm chart values overrides only for Azure Stage eastus2
+tenant: ""
+
+tenants:
+  - id: 8df82368-a5b2-4ef9-a277-c8faf87f0004
+    name: t0004
+    key: 0004
+    dcu: 4
+  - id: 317b29d1-754f-4cac-b740-767888900005
+    name: t0005
+    key: 0005
+    dcu: 4
+  - id: 92a6480a-cfdb-4d80-833f-56d521780006
+    name: t0006
+    key: 0006
+    dcu: 4

@@ -1,0 +1,8 @@
+# Helm chart values overrides only for Azure Dev eastus2
+tenant: ""
+
+tenants:
+  - id: 2868802f-1763-4ecd-94f6-203400001200
+    name: t1200
+    key: 1200
+    dcu: 4

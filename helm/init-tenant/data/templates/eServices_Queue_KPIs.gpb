@@ -1,0 +1,225 @@
+definition {
+  guid: "000000000000-0000-0000-0000-0000000e"
+  layout_type: ltPCREGULAR
+  name: "eServices Queue KPIs"
+  description: "A queue report presenting an overview of current or near real-time activity for eServices channels."
+  is_read_only: true
+  refresh_interval: 60
+  default_widget_body {
+    size_x: 1
+    size_y: 2
+    label: "eServices Queue KPIs"
+    view {
+      type: "PagedKPIView"
+      column_selector: "Email_In_Process"
+      column_selector: "Chat_In_Process"
+      column_selector: "Social_Media_In_Queue"
+      column_selector: "Work_Item_In_Queue"
+    }
+  }
+  column {
+    id: "_Object$ID"
+    category: ccDIMENSION
+    type: ctFORMULA
+    vt: vINT
+    is_delta_key: true
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectID"
+    }
+  }
+  column {
+    id: "_Object$Type"
+    category: ccDIMENSION
+    type: ctFORMULA
+    vt: vINT
+    is_delta_key: true
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectType"
+    }
+  }
+  column {
+    id: "_Object$Name"
+    category: ccDIMENSION
+    type: ctFORMULA
+    vt: vSTR
+    format: "string"
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectName"
+    }
+  }
+  column {
+    id: "Email_Waiting"
+    label: "Email Waiting"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The Total Number of Email interactions that are currently waiting to be processed."
+    format: "integer"
+    statistic {
+      stat_type_name: "MediaX_Current_Waiting_Processing_In_Queue_email"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Email_In_Process"
+    label: "Email In Process"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The Total Number of Email interactions that are currently being processed."
+    format: "integer"
+    statistic {
+      stat_type_name: "MediaX_Current_In_Processing_In_Queue_email"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Email_In_Queue"
+    label: "Email In Queue"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The Total Number of Email interactions that are currently in Interaction Queue."
+    format: "integer"
+    statistic {
+      stat_type_name: "MediaX_Current_In_Queue_email"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Chat_Waiting"
+    label: "Chat Waiting"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The Total Number of Chat interactions that are currently waiting to be processed."
+    format: "integer"
+    statistic {
+      stat_type_name: "MediaX_Current_Waiting_Processing_In_Queue_chat"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Chat_In_Process"
+    label: "Chat In Process"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The Total Number of Chat interactions that are currently being processed."
+    format: "integer"
+    statistic {
+      stat_type_name: "MediaX_Current_In_Processing_In_Queue_chat"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Chat_In_Queue"
+    label: "Chat In Queue"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The Total Number of Chat interactions that are currently in Interaction Queue."
+    format: "integer"
+    statistic {
+      stat_type_name: "MediaX_Current_In_Queue_chat"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Social_Media_Waiting"
+    label: "Social Waiting"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The Total Number of Social Media interactions that are currently waiting to be processed."
+    format: "integer"
+    statistic {
+      stat_type_name: "MediaX_Current_Waiting_Processing_In_Queue_social"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Social_Media_In_Process"
+    label: "Social In Process"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The Total Number of Social Media interactions that are currently being processed."
+    format: "integer"
+    statistic {
+      stat_type_name: "MediaX_Current_In_Processing_In_Queue_social"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Social_Media_In_Queue"
+    label: "Social In Queue"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The Total Number of Social Media interactions that are currently in Interaction Queue."
+    format: "integer"
+    statistic {
+      stat_type_name: "MediaX_Current_In_Queue_social"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Work_Item_Waiting"
+    label: "Work Item Waiting"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The Total Number of Work Item interactions that are currently waiting to be processed."
+    format: "integer"
+    statistic {
+      stat_type_name: "MediaX_Current_Waiting_Processing_In_Queue_workitem"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Work_Item_In_Process"
+    label: "Work Item In Process"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The Total Number of Work Item interactions that are currently being processed."
+    format: "integer"
+    statistic {
+      stat_type_name: "MediaX_Current_In_Processing_In_Queue_workitem"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Work_Item_In_Queue"
+    label: "Work Item In Queue"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The Total Number of Work Item interactions that are currently in Interaction Queue."
+    format: "integer"
+    statistic {
+      stat_type_name: "MediaX_Current_In_Queue_workitem"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  collector_def {
+    allowed_object_type: SObjectStagingArea
+  }
+  collector_label: "multimedia"
+}

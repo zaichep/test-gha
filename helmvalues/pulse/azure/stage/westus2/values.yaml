@@ -1,0 +1,38 @@
+# Helm chart values overrides only for Azure Stage westus2
+
+tenant: ""
+
+options:
+  authUrl: https://gauth.api01-westus2.stage.genazure.com
+  authUrlInt: http://gauth-auth-active.gauth.svc.cluster.local.
+  gwsUrl: https://gws.api01-westus2.stage.genazure.com
+
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: letsencrypt-prod-nginx
+  hosts:
+    - host: pulse.nlb01-westus2.stage.genazure.com
+      paths: [/]
+  tls:
+    # Each ingress should have a unique secretName, PECAZURE-1482
+    - secretName:
+      hosts:
+        - pulse.nlb01-westus2.stage.genazure.com
+
+gateway:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: nginx01-internal
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    cert-manager.io/cluster-issuer: letsencrypt-prod-nginx
+  hosts:
+    - host: pulse.api01-westus2.stage.genazure.com
+      paths: [/]
+  tls:
+    # Each ingress should have a unique secretName, PECAZURE-1482
+    - secretName:
+      hosts:
+        - pulse.api01-westus2.stage.genazure.com

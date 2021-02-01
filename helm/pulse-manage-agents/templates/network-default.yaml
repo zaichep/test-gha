@@ -1,0 +1,19 @@
+{{- if .Values.networkPolicies.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  namespace: {{ .Release.Namespace }}
+  name: {{ include "pulse-manage-agents.fullname" . }}-default-deny-all
+spec:
+  podSelector:
+    matchLabels:
+      servicename: {{ include "pulse-manage-agents.fullname" . }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - ports:
+        # allow Prometheus scrapes
+        - protocol: TCP
+          port: {{ .Values.env.MONITORING_PORT }}
+  {{- end }}
