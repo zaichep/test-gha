@@ -170,7 +170,7 @@ jobs:
               fi
             fi
           elif [ "${{ steps.published.outputs.value }}" = "true" ]; then
-            echo "ERROR: The chart ${{ matrix.chart }}-${version} is already published."
+            echo "ERROR: The chart ${{ matrix.chart }}-${{ steps.chart-info.outputs.version }} is already published."
             echo "ERROR: Consider to bump up chart's version."
             exit 1
           fi
