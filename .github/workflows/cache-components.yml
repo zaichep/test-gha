@@ -23,10 +23,7 @@ jobs:
       #  location: [...]
       helm-chart-values-matrix: '${{ steps.params.outputs.helm-chart-values-matrix }}'
 
-    runs-on:
-      - self-hosted
-      - dev
-      - westus2
+    runs-on: ubuntu-latest
 
     steps:
       - name: Clean Workspace
