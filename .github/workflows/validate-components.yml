@@ -50,12 +50,10 @@ jobs:
           environments=()
           locations=()
           tenants=()
-          if [[ ${#environments[@]} -eq 0 ]]
-          then
+          if [[ ${#environments[@]} -eq 0 ]]; then
             environments=(dev)
           fi
-          if [[ ${#locations[@]} -eq 0 ]]
-          then
+          if [[ ${#locations[@]} -eq 0 ]]; then
             locations=(westus2 eastus2)
           fi
           charts_json=$(printf '"%s",' "${charts[@]}" | sed 's/^/[/;s/,$/]/')
@@ -112,8 +110,7 @@ jobs:
             format('helmvalues/{0}/*/{1}/{2}/**', matrix.chart, matrix.environment, matrix.location),
             'helm/common/*/*.yaml',
             format('helmvalues/common/*/{0}/*.yaml', matrix.environment),
-            format('helmvalues/common/*/{0}/{1}/**', matrix.environment, matrix.location)) }}"
-          echo "::set-output name=workflow-hash::${{ hashFiles(
+            format('helmvalues/common/*/{0}/{1}/**', matrix.environment, matrix.location),
             '.github/workflows/validate-components.yml') }}"
 
       - name: Get Published
@@ -128,8 +125,7 @@ jobs:
         id: published
         run: |
           value=false
-          if [ -e "helm/publish-${{ matrix.chart }}-${{ steps.chart-info.outputs.version }}.lock" ]
-          then
+          if [ -e "helm/publish-${{ matrix.chart }}-${{ steps.chart-info.outputs.version }}.lock" ]; then
             value=true
           fi
           set -x
@@ -151,22 +147,13 @@ jobs:
           key: ${{ runner.os }}-modify-helm-chart-values-${{ matrix.chart }}-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.values-hash }}
           restore-keys: modify-helm-chart-values-${{ matrix.chart }}-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.values-hash }}
 
-      - name: Get Workflow Modified
-        uses: actions/cache@0781355a23dac32fd3bac414512f4b903437991a # v2.1.3
-        with:
-          path: |
-            .github/workflows/modify-validate-components-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.workflow-hash }}.lock
-          key: ${{ runner.os }}-modify-workflow-validate-components-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.workflow-hash }}
-
       - name: Check Modified
         id: modified
         run: |
           value=true
           if [ -e "helm/modify-${{ matrix.chart }}-${{ steps.chart-info.outputs.hash }}.lock" ]; then
             if [ -e "helm/modify-values-${{ matrix.chart }}-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.values-hash }}.lock" ]; then
-              if [ -e ".github/workflows/modify-validate-components-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.workflow-hash }}.lock" ]; then
-                value=false
-              fi
+              value=false
             fi
           elif [ "${{ steps.published.outputs.value }}" = "true" ]; then
             echo "ERROR: The chart ${{ matrix.chart }}-${{ steps.chart-info.outputs.version }} is already published."
@@ -189,4 +176,3 @@ jobs:
             > "helm/modify-${{ matrix.chart }}-${{ steps.chart-info.outputs.hash }}.lock"
           echo "${{ steps.chart-info.outputs.values-hash }}" \
             > "helm/modify-values-${{ matrix.chart }}-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.values-hash }}.lock"
-          touch ".github/workflows/modify-validate-components-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.workflow-hash }}.lock"
