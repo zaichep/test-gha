@@ -59,6 +59,7 @@ jobs:
             environments=(dev)
           fi
           if [[ ${#locations[@]} -eq 0 ]]
+          then
             locations=(westus2 eastus2)
           fi
           charts_json=$(printf '"%s",' "${charts[@]}" | sed 's/^/[/;s/,$/]/')
