@@ -162,22 +162,17 @@ jobs:
         id: modified
         run: |
           value=true
-          if [ -e "helm/modify-${{ matrix.chart }}-${{ steps.chart-info.outputs.hash }}.lock" ]
-          then
-            if [ "${{ steps.published.outputs.value }}" = "true" ]
-            then
-              echo "ERROR: The chart ${{ matrix.chart }}-${version} is already published."
-              echo "ERROR: Consider to bump up chart's version."
-              exit 1
-            fi
-            if [ -e "helm/modify-values-${{ matrix.chart }}-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.values-hash }}.lock" ]
-            then
+          if [ -e "helm/modify-${{ matrix.chart }}-${{ steps.chart-info.outputs.hash }}.lock" ]; then
+            if [ -e "helm/modify-values-${{ matrix.chart }}-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.values-hash }}.lock" ]; then
               value=false
-              if [ -e ".github/workflows/modify-validate-components-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.workflow-hash }}.lock" ]
-              then
+              if [ -e ".github/workflows/modify-validate-components-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.workflow-hash }}.lock" ]; then
                 value=false
               fi
             fi
+          elif [ "${{ steps.published.outputs.value }}" = "true" ]; then
+            echo "ERROR: The chart ${{ matrix.chart }}-${version} is already published."
+            echo "ERROR: Consider to bump up chart's version."
+            exit 1
           fi
           set -x
           echo "::set-output name=value::${value}"
