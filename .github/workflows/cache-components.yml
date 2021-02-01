@@ -140,7 +140,8 @@ jobs:
             format('helmvalues/{0}/*/{1}/{2}/**', matrix.chart, matrix.environment, matrix.location),
             'helm/common/*/*.yaml',
             format('helmvalues/common/*/{0}/*.yaml', matrix.environment),
-            format('helmvalues/common/*/{0}/{1}/**', matrix.environment, matrix.location)) }}"
+            format('helmvalues/common/*/{0}/{1}/**', matrix.environment, matrix.location),
+            '.github/workflows/validate-components.yml') }}"
 
       - name: Get Modified
         uses: actions/cache@0781355a23dac32fd3bac414512f4b903437991a # v2.1.3
