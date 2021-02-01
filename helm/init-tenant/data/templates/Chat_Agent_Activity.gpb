@@ -1,0 +1,585 @@
+definition {
+  guid: "000000000000-0000-0000-0000-00000008"
+  layout_type: ltPCREGULAR
+  name: "Chat Agent Activity"
+  description: "A report presenting agent or agent group activity as it relates to the processing of chat contacts."
+  is_read_only: true
+  refresh_interval: 60
+  column {
+    id: "_Object$ID"
+    category: ccDIMENSION
+    type: ctFORMULA
+    vt: vINT
+    is_delta_key: true
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectID"
+    }
+  }
+  column {
+    id: "_Object$Type"
+    category: ccDIMENSION
+    type: ctFORMULA
+    vt: vINT
+    is_delta_key: true
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectType"
+    }
+  }
+  column {
+    id: "_Object$Name"
+    category: ccDIMENSION
+    type: ctFORMULA
+    vt: vSTR
+    format: "string"
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectName"
+    }
+  }
+  column {
+    id: "Chat_Concurrent_Sessions"
+    label: "Concurrent Chats"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of concurrent chats currently happening."
+    format: "integer"
+    statistic {
+      stat_type_name: "concurrent_chat_sessions"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "CHAT_MEDIA"
+    }
+  }
+  column {
+    id: "Chat_Capacity_Formula"
+    label: "Capacity"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The number of routable chats based on the defined capacity rules the Agent or Agent group can handle."
+    format: "integer"
+    statistic {
+      stat_type_name: "Number_of_chats_routable_to_group"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "Chat_capacity_media"
+    }
+  }
+  column {
+    id: "Chat_Agent_Ocupancy"
+    label: "%Occupancy"
+    category: ccMEASURE
+    type: ctFORMULA
+    vt: vDBL
+    description: "The ratio of concurrent chats based on the total number of chats the Agent group can handle."
+    format: "percent"
+    formula {
+      type: ftPCSCRIPT
+      text: "if (Data.Chat_Capacity_Formula.Value > 0) Result = 100 * Data.Chat_Concurrent_Sessions.Value / Data.Chat_Capacity_Formula.Value; else Result = 0;"
+    }
+  }
+  column {
+    id: "Total_Login_Time"
+    label: "Login Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total time that monitored agents were logged in. Applied to GroupAgents and GroupPlaces, this stat type calculates the total login time for all the agents belonging to the specified group."
+    format: "time"
+    statistic {
+      stat_type_name: "Total_Login_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Chat_Ready_Time"
+    label: "Ready Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total time this agent spent waiting for the next chat in Ready state."
+    format: "time"
+    statistic {
+      stat_type_name: "TotalReadyDNStatusTime"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "CHAT_MEDIA"
+    }
+  }
+  column {
+    id: "Chat_Not_Ready_Time"
+    label: "Not Ready Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total time this agent spent in a not Ready status for chat media."
+    format: "time"
+    statistic {
+      stat_type_name: "TotalNotReadyDNStatusTime"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "CHAT_MEDIA"
+    }
+  }
+  column {
+    id: "Chat_Ring_Time"
+    label: "Alerting Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total amount of time that chat popup was alerting the agent desktop. In case if Agent handles several chats in parallel only first Chat Inviting time will be counted in this statistic."
+    format: "time"
+    statistic {
+      stat_type_name: "Total_Ringing_Time_v1"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "CHAT_MEDIA"
+    }
+  }
+  column {
+    id: "Chat_Handle_Time"
+    label: "Handle Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total amount of time the agent spent handling chats. The duration is not limited to the chat focus time. If Agent handles multiple chats in parallel they will be counted multiple times."
+    format: "time"
+    statistic {
+      stat_type_name: "Interactions_Processing_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "CHAT_MEDIA"
+    }
+  }
+  column {
+    id: "Chat_Avg_Handle_Time"
+    label: "AHT"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The average amount of time the agent spent handling chat The duration is not limited to the chat focus time."
+    format: "time"
+    statistic {
+      stat_type_name: "Average_Processing_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "CHAT_MEDIA"
+    }
+  }
+  column {
+    id: "Chat_Offered"
+    label: "Offered"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of chats that were offered for processing to this agent or agent group during the specified period. This stat type counts interactions both offered by business routing strategies and other agents."
+    format: "integer"
+    statistic {
+      stat_type_name: "Interactions_Offered"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "CHAT_MEDIA"
+    }
+  }
+  column {
+    id: "Chat_Perc_Accepted"
+    label: "%Answered"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vDBL
+    description: "The percentage of chats answered by the agent based on total of chats offered."
+    format: "percent"
+    statistic {
+      stat_type_name: "Ixn_Perc_Accepted"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "CHAT_MEDIA"
+    }
+  }
+  column {
+    id: "Chat_Perc_Rejected"
+    label: "%Rejected"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vDBL
+    description: "The percentage of chats rejected by the agent based on total chats offered."
+    format: "percent"
+    statistic {
+      stat_type_name: "Ixn_Perc_Rejected"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "CHAT_MEDIA"
+    }
+  }
+  column {
+    id: "Chat_Perc_Missed"
+    label: "%Missed"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vDBL
+    description: "The percentage of chats missed by the agent based on total chats offered."
+    format: "percent"
+    statistic {
+      stat_type_name: "Ixn_Perc_Missed"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "CHAT_MEDIA"
+    }
+  }
+  column {
+    id: "Chat_Accepted"
+    label: "Answered"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of chats that were offered for processing and that were answered by Agent during the specified period."
+    format: "integer"
+    statistic {
+      stat_type_name: "Interactions_Accepted"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "CHAT_MEDIA"
+    }
+  }
+  column {
+    id: "Chat_Rejected"
+    label: "Rejected"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of chats that were offered for processing and that were rejected during the specified period."
+    format: "integer"
+    statistic {
+      stat_type_name: "Interactions_Rejected"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "CHAT_MEDIA"
+    }
+  }
+  column {
+    id: "Chat_Missed"
+    label: "Missed"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of chats that were offered for processing and that were missed during the specified period."
+    format: "integer"
+    statistic {
+      stat_type_name: "Interactions_Timed_Out"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "CHAT_MEDIA"
+    }
+  }
+  column {
+    id: "Chat_Closed_by_Agent"
+    label: "Closed by Agent"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of chats terminated by the agent."
+    format: "integer"
+    statistic {
+      stat_type_name: "TotalNumberInteractionsHandled"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "csg_SessionEndedBy_AGENT"
+    }
+  }
+  column {
+    id: "Perc_Closed_By_Agent"
+    label: "%Closed by Agent"
+    category: ccMEASURE
+    type: ctFORMULA
+    vt: vDBL
+    description: "Percentage of answered chats closed by Agent."
+    format: "percent"
+    formula {
+      type: ftPCSCRIPT
+      text: "if (Data.Chat_Accepted.Value > 0) Result = 100 * Data.Chat_Closed_by_Agent.Value / Data.Chat_Accepted.Value; else Result = 0;"
+    }
+  }
+  column {
+    id: "Perc_Closed_By_Customer"
+    label: "%Closed by Customer"
+    category: ccMEASURE
+    type: ctFORMULA
+    vt: vDBL
+    description: "Percentage of answered chats closed by the customer."
+    format: "percent"
+    formula {
+      type: ftPCSCRIPT
+      text: "if (Data.Chat_Accepted.Value > Data.Chat_Closed_by_Agent.Value) Result = 100 * (Data.Chat_Accepted.Value - Data.Chat_Closed_by_Agent.Value) / Data.Chat_Accepted.Value; else Result = 0;"
+    }
+  }
+  column {
+    id: "Chat_All_Transfers_Made"
+    label: "Transfers Made"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of chat transfers made by this agent or agent group during the specified period. Include transfer to skill or agent group."
+    format: "integer"
+    statistic {
+      stat_type_name: "Total_Number_Inbound_Ixn_Processed"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "chat_singlestep_tansfer"
+    }
+  }
+  column {
+    id: "Chat_Perc_Transfers_Made"
+    label: "%Trans Made"
+    category: ccMEASURE
+    type: ctFORMULA
+    vt: vDBL
+    description: "The percentage of chats transfered to another agent based on total of chats offered."
+    format: "percent"
+    formula {
+      type: ftPCSCRIPT
+      text: "if (Data.Chat_Accepted.Value > 0) Result = Data.Chat_All_Transfers_Made.Value / Data.Chat_Accepted.Value; else Result = 0;"
+    }
+  }
+  column {
+    id: "Agent_csg_CustomerTime_FirstAgentTime_AverageCustomValue"
+    label: "Avg Chat Duration"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "Average duration spent with a customer while handling a chat session."
+    format: "time"
+    statistic {
+      stat_type_name: "Agent_csg_CustomerTime_FirstAgentTime_AverageCustomValue"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "csg_SessionWithCustomerTime_csg_SessionUntilFirstAgentTime"
+    }
+  }
+  column {
+    id: "Agent_csg_CustomerTime_FirstAgentTime_MinCustomValue"
+    label: "Min Chat Duration"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "Minimum duration spent with a customer while handling a chat session."
+    format: "time"
+    statistic {
+      stat_type_name: "Agent_csg_CustomerTime_FirstAgentTime_MinCustomValue"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "csg_SessionWithCustomerTime_csg_SessionUntilFirstAgentTime"
+    }
+  }
+  column {
+    id: "Agent_csg_CustomerTime_FirstAgentTime_MaxCustomValue"
+    label: "Max Chat Duration"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "Maximum duration spent with a customer while handling a chat session."
+    format: "time"
+    statistic {
+      stat_type_name: "Agent_csg_CustomerTime_FirstAgentTime_MaxCustomValue"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "csg_SessionWithCustomerTime_csg_SessionUntilFirstAgentTime"
+    }
+  }
+  column {
+    id: "Agent_csg_CustomerTime_FirstAgentTime_TotalCustomValue"
+    label: "Chat Duration"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "Total duration spent with a customer while handling a chat session."
+    format: "time"
+    statistic {
+      stat_type_name: "Agent_csg_CustomerTime_FirstAgentTime_TotalCustomValue"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "csg_SessionWithCustomerTime_csg_SessionUntilFirstAgentTime"
+    }
+  }
+  column {
+    id: "Agent_csg_SessionUntilFirstAgentTime_AverageCustomValue"
+    label: "Customer Avg Wait"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "Avg customer wait for agent while handling a chat session."
+    format: "time"
+    statistic {
+      stat_type_name: "Agent_csg_SessionUntilFirstAgentTime_AverageCustomValue"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "csg_SessionUntilFirstAgentTime"
+    }
+  }
+  column {
+    id: "Agent_csg_SessionUntilFirstAgentTime_MaxCustomValue"
+    label: "Customer Max Wait"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "Max customer wait for agent while handling a chat session."
+    format: "time"
+    statistic {
+      stat_type_name: "Agent_csg_SessionUntilFirstAgentTime_MaxCustomValue"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "csg_SessionUntilFirstAgentTime"
+    }
+  }
+  column {
+    id: "Agent_csg_FirstReplyTime_FirstAgentTime_AverageCustomValue"
+    label: "Avg Greeting Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "Avg duration before first agent greeting while handling a chat session."
+    format: "time"
+    statistic {
+      stat_type_name: "Agent_csg_FirstReplyTime_FirstAgentTime_AverageCustomValue"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "csg_SessionUntilFirstReplyTime_csg_SessionUntilFirstAgentTime"
+    }
+  }
+  column {
+    id: "Agent_csg_FirstReplyTime_FirstAgentTime_MaxCustomValue"
+    label: "Max Greeting Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "Max duration before first agent greeting while handling a chat session."
+    format: "time"
+    statistic {
+      stat_type_name: "Agent_csg_FirstReplyTime_FirstAgentTime_MaxCustomValue"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "csg_SessionUntilFirstReplyTime_csg_SessionUntilFirstAgentTime"
+    }
+  }
+  column {
+    id: "Agent_cse_AgentReplyTotalTime_by_TotalCount_TotalCustomValue"
+    label: "Avg Response Time"
+    category: ccMEASURE
+    type: ctFORMULA
+    vt: vLONG
+    description: "Average time it takes for agent to reply to a customer while handling a chat session."
+    format: "time"
+    formula {
+      type: ftPCSCRIPT
+      text: "if (Data.Agent_cse_AgentReplyTotalCount_TotalCustomValue.Value > 0) Result = Data.Agent_cse_AgentReplyTotalTime_TotalCustomValue.Value / Data.Agent_cse_AgentReplyTotalCount_TotalCustomValue.Value; else Result = 0;"
+    }
+  }
+  column {
+    id: "Agent_cse_AgentReplyMaxTime_TotalCustomValue"
+    label: "Max Response Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "Maximum time it takes for agent to reply to a customer while handling a chat session."
+    format: "time"
+    statistic {
+      stat_type_name: "Agent_cse_AgentReplyMaxTime_TotalCustomValue"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "cse_AgentReplyMaxTime"
+    }
+  }
+  column {
+    id: "Agent_cse_AgentMessagesTotal_by_TotalCount_TotalCustomValue"
+    label: "Avg Message Size"
+    category: ccMEASURE
+    type: ctFORMULA
+    vt: vINT
+    description: "Average size of the message sent by agent while handling a chat session."
+    format: "integer"
+    formula {
+      type: ftPCSCRIPT
+      text: "if (Data.Agent_csg_MessagesFromAgentsCount_TotalCustomValue.Value > 0) Result = Data.Agent_csg_MessagesFromAgentsSize_TotalCustomValue.Value / Data.Agent_csg_MessagesFromAgentsCount_TotalCustomValue.Value; else Result = 0;"
+    }
+  }
+  column {
+    id: "Agent_cse_AgentReplyTotalCount_TotalCustomValue"
+    label: "Agent Reply Total Number"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "Total number of repllies sent by the agent to the customer."
+    format: "integer"
+    statistic {
+      stat_type_name: "Agent_cse_AgentReplyTotalCount_TotalCustomValue"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "cse_AgentReplyTotalCount"
+    }
+  }
+  column {
+    id: "Agent_cse_AgentReplyTotalTime_TotalCustomValue"
+    label: "Agent Reply Total Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "Total time an agent spent replying to a customer."
+    format: "time"
+    statistic {
+      stat_type_name: "Agent_cse_AgentReplyTotalTime_TotalCustomValue"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "cse_AgentReplyTotalTime"
+    }
+  }
+  column {
+    id: "Agent_csg_MessagesFromAgentsSize_TotalCustomValue"
+    label: "Total Agent Message Size"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "Total number of symbols agent typed in message."
+    format: "integer"
+    statistic {
+      stat_type_name: "Agent_csg_MessagesFromAgentsSize_TotalCustomValue"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "csg_MessagesFromAgentsSize"
+    }
+  }
+  column {
+    id: "Agent_csg_MessagesFromAgentsCount_TotalCustomValue"
+    label: "Total Agent Message Count"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "Total number of messages sent by agent."
+    format: "integer"
+    statistic {
+      stat_type_name: "Agent_csg_MessagesFromAgentsCount_TotalCustomValue"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "csg_MessagesFromAgentsCount"
+    }
+  }
+  default_widget_body {
+    label: "Chat Agent Activity"
+    size_x: 1
+    size_y: 2
+    view {
+      type: "BarView"
+      column_selector: "Chat_Concurrent_Sessions"
+      sorting {
+        is_asc: true
+      }
+    }
+  }
+  collector_def {
+    allowed_object_type: SObjectAgent
+    allowed_object_type: SObjectGroupAgents
+  }
+  collector_label: "multimedia"
+}

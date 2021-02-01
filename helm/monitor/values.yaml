@@ -1,0 +1,76 @@
+# Default values for templates
+
+replicaCount: 1
+
+nameOverride: ""
+fullnameOverride: ""
+
+##########################################################################
+
+# tenant identification, or empty for shared deployment
+tenant: ""
+
+# deployment parameters
+deployment:
+  # deployment type: local|azure (TBD more)
+  type: local
+
+# dashboards parameters
+dashboards:
+  # enable dashboards
+  enabled: true
+
+# alerts parameters
+alerts:
+  # enable alerts
+  enabled: true
+  # thresholds settings for alerts
+  thresholds:
+    runningInstancesPercentage:
+      warning: 90
+      critical: 75
+    usedMemoryPercentage:
+      warning: 70
+      critical: 90
+    usedCpuPercentage:
+      warning: 70
+      critical: 90
+    usedDiskPercentage:
+      warning: 70
+      critical: 90
+    request5xxPerSecond:
+      warning: 5
+      critical: 15
+    hikariActiveConnectionsPercentage:
+      warning: 70
+      critical: 90
+  conditionDurations:
+    warning: 10m
+    critical: 5m
+
+##########################################################################
+
+# container image common settings
+image:
+  tag: ""
+  pullPolicy: IfNotPresent
+  repository: ""
+
+imagePullSecrets: []
+
+##########################################################################
+
+podAnnotations: {}
+
+podSecurityContext:
+  runAsUser: 500
+  runAsGroup: 500
+  fsGroup: 500
+
+priorityClassName: ""
+
+# you can configure nodeSelector if needed
+nodeSelector: {}
+
+# tolerations settings
+tolerations: {}

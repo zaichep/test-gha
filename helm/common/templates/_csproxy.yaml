@@ -1,0 +1,107 @@
+{{/* vim: set filetype=mustache: */}}
+
+{{- define "common.csproxy.tpl" -}}
+name: csproxy
+env:
+- name: K8S_POD_NAME
+  valueFrom:
+    fieldRef:
+      fieldPath: metadata.name
+- name: TENANT_SID
+  value: {{ .Values.tenant.sid | quote }}
+- name: GCTI_GLM_LICENSE_DISABLE
+  value: "1"
+{{- with .Values.csproxy.params }}
+- name: APP_NAME
+  value: {{ include "cfgAppName" (merge (dict "name" "csproxy") $) | quote }}
+- name: SELECT_APP_BY_INDEX
+  value: {{ .selectAppByIndex | quote }}
+- name: CFG_HOST
+  value: {{ .cfgHost | default ( printf "tenant-%s.voice.svc.cluster.local." $.Values.tenant.id) | quote }}
+- name: CFG_PORT
+  value: {{ .cfgPort | quote }}
+- name: ADDP_TRACE
+  value: {{ .addpTraceMode | quote }}
+- name: ADDP_LOCAL_TIMEOUT
+  value: {{ .addpLocalTimeout | quote }}
+- name: ADDP_REMOTE_TIMEOUT
+  value: {{ .addpRemoteTimeout | quote }}
+{{- end}}
+image: {{ printf "%s%s:%s" .Values.image.repository .Values.csproxy.image.name (coalesce .Values.csproxy.image.tag .Values.image.tag .Chart.AppVersion ) | quote }}
+imagePullPolicy: {{ .Values.csproxy.image.pullPolicy | default .Values.image.pullPolicy }}
+{{- if not .Values.csproxy.probes.disabled }}
+startupProbe:
+  exec:
+    command:
+    - ./k8s-probe
+    - --liveness
+    - --port
+    - {{ .Values.csproxy.ports.default | quote }}
+    - --app
+    - {{ .Values.csproxy.probes.cfgApp | quote }}
+    - --app-type
+    - {{ .Values.csproxy.probes.cfgAppType | quote }}
+  {{- with .Values.csproxy.probes.startupProbe }}
+  {{- toYaml . | nindent 2 }}
+  {{- end}}
+livenessProbe:
+  exec:
+    command:
+    - ./k8s-probe
+    - --liveness
+    - --port
+    - {{ .Values.csproxy.ports.default | quote }}
+    - --app
+    - {{ .Values.csproxy.probes.cfgApp | quote }}
+    - --app-type
+    - {{ .Values.csproxy.probes.cfgAppType | quote }}
+  {{- with .Values.csproxy.probes.livenessProbe }}
+  {{- toYaml . | nindent 2 }}
+  {{- end}}
+readinessProbe:
+  exec:
+    command:
+    - ./k8s-probe
+    - --readiness
+    - --port
+    - {{ .Values.csproxy.ports.default | quote }}
+    - --app
+    - {{ .Values.csproxy.probes.cfgApp | quote }}
+    - --app-type
+    - {{ .Values.csproxy.probes.cfgAppType | quote }}
+  {{- with .Values.csproxy.probes.readinessProbe }}
+  {{- toYaml . | nindent 2 }}
+  {{- end}}
+{{- end}}
+ports:
+{{- range $key, $value := .Values.csproxy.ports }}
+- name: {{ $key }}
+  containerPort: {{ $value }}
+  protocol: TCP
+{{- end }}
+{{- with .Values.csproxy.resources }}
+{{- if not .disabled }}
+resources:
+  requests: {{ toYaml .requests | nindent 4 }}
+  limits: {{ toYaml .limits | nindent 4 }}
+{{- end}}
+{{- end}}
+securityContext:
+  {{- toYaml .Values.csproxy.securityContext | nindent 2 }}
+volumeMounts:
+  - name: logs
+    mountPath: /data/log
+
+{{- end -}}
+
+{{- /*
+ConfigServer container definition.
+This takes an array of values:
+- the top context
+- the template name of the overrides (optional)
+Example:
+  include "common.csproxy" (list . "myCsProxyOverrides")
+*/ -}}
+{{- define "common.csproxy" -}}
+{{- include "common.util.merge" (append . "common.csproxy.tpl") -}}
+{{- end -}}

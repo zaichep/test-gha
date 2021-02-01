@@ -1,0 +1,553 @@
+definition {
+  guid: "000000000000-0000-0000-0000-00000001"
+  layout_type: ltPCREGULAR
+  name: "Agent KPIs"
+  description: "Agents manage many transactions and states in addition or related to answered calls. Viewing all the data in a single report provides the supervisor with an understanding of agent's performance as a function of first call resolution."
+  is_read_only: true
+  refresh_interval: 60
+  default_widget_body {
+    size_x: 1
+    size_y: 2
+    label: "Agent KPIs"
+    view {
+      type: "BarView"
+      column_selector: "Login_Time"
+    }
+  }
+  column {
+    id: "_Object$ID"
+    category: ccDIMENSION
+    type: ctFORMULA
+    vt: vINT
+    is_delta_key: true
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectID"
+    }
+  }
+  column {
+    id: "_Object$Type"
+    category: ccDIMENSION
+    type: ctFORMULA
+    vt: vINT
+    is_delta_key: true
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectType"
+    }
+  }
+  column {
+    id: "_Object$Name"
+    category: ccDIMENSION
+    type: ctFORMULA
+    vt: vSTR
+    format: "string"
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectName"
+    }
+  }
+  column {
+    id: "Login_Time"
+    label: "Login Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total time that monitored agents were logged in. This metric does not include logged-in time when the switch is disconnected from Stat Server. When this metric is applied to an Agent Group, this metric calculates the total login time for all the agents belonging to the specified group."
+    format: "time"
+    statistic {
+      stat_type_name: "Total_Login_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "Ready_Time"
+    label: "Ready Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total time this agent spent waiting for the next call. The total duration of all WaitForNextCall statuses that completed for a particular agent during the reporting interval. When this metric is applied to an Agent Group, this metric calculates the total ready time for all the agents belonging to the specified group."
+    format: "time"
+    statistic {
+      stat_type_name: "Total_Wait_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "Not_Ready_Time"
+    label: "Not Ready Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total time that an agent\'s DN completed being in NotReadyForNextCall status during the reporting interval. When this metric is applied to an Agent Group, this metric calculates the total not ready time for all the agents belonging to the specified group."
+    format: "time"
+    statistic {
+      stat_type_name: "Total_Not_Ready_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "Break_Time"
+    label: "Break Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total of time an agent was not available to handle incoming interactions because he was not Ready with Reason Break."
+    format: "time"
+    statistic {
+      stat_type_name: "Total_Not_Ready_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "MOTIF_Break"
+    }
+  }
+  column {
+    id: "Lunch_Time"
+    label: "Lunch Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total of time an agent was not available to handle incoming interactions because he was not Ready with Reason Lunch."
+    format: "time"
+    statistic {
+      stat_type_name: "Total_Not_Ready_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "MOTIF_Lunch"
+    }
+  }
+  column {
+    id: "Others_Time"
+    label: "Offline Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total of time an agent was not available to handle incoming interactions because he was not Ready with Reason different from Break and Lunch."
+    format: "time"
+    statistic {
+      stat_type_name: "Total_Not_Ready_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "MOTIF_Others"
+    }
+  }
+  column {
+    id: "Ring_Time"
+    label: "Ringing Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total amount of time that calls were ringing on an agent\'s phone."
+    format: "time"
+    statistic {
+      stat_type_name: "Total_Ringing_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "Dialing_Time"
+    label: "Dialing Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total amount of time that calls were dialing on an agent\'s phone."
+    format: "time"
+    statistic {
+      stat_type_name: "Total_Dialing_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "Handle_Time"
+    label: "Handle Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total time agents spend handling inbound, internal or outbound calls."
+    format: "time"
+    statistic {
+      stat_type_name: "Total_Handle_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "Inbound_Time"
+    label: "In Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total time agents spend handling inbound calls."
+    format: "time"
+    statistic {
+      stat_type_name: "Total_Inbound_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "Outbound_Time"
+    label: "Out Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total time agents spend handling outbound calls."
+    format: "time"
+    statistic {
+      stat_type_name: "Total_Outbound_time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "Hold_Time"
+    label: "Hold Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total time agents spend on hold."
+    format: "time"
+    statistic {
+      stat_type_name: "Total_Hold_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "ACW_Time"
+    label: "ACW Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total time an agent\'s DN(s) completed being in AfterCallWork status during the reporting interval. This typically represents the time an agent spent doing follow-up work after calls."
+    format: "time"
+    statistic {
+      stat_type_name: "Total_Work_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "Consult_Time"
+    label: "Consult Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total time agents spend handling consultative calls."
+    format: "time"
+    statistic {
+      stat_type_name: "Total_Consult_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "Internal_Time"
+    label: "Internal Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total time agents spend handling internal calls."
+    format: "time"
+    statistic {
+      stat_type_name: "Total_Internal_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "Offered"
+    label: "Offered"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of calls offered to an agent."
+    format: "integer"
+    statistic {
+      stat_type_name: "Total_Calls_Offered"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "Answered"
+    label: "Answered"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of incoming calls answered by the agent."
+    format: "integer"
+    statistic {
+      stat_type_name: "CallsAnswered"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "Answered_Last_Hr"
+    label: "Answered (last Hr)"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of incoming calls answered by the agent in the last hour."
+    format: "integer"
+    statistic {
+      stat_type_name: "CallsAnswered"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      time_profile: "LastHour"
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "Abandoned_From_Ringing"
+    label: "Abandoned Ringing"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of calls abaondoned while agent desktop was ringing."
+    format: "integer"
+    statistic {
+      stat_type_name: "AbandonedFromRinging"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "Dropped"
+    label: "Calls Dropped"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of calls forwarded from one agent desktop to another (RONA)."
+    format: "integer"
+    statistic {
+      stat_type_name: "Calls_Forced_Off"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "Outbound_Calls"
+    label: "Out"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of outbound calls handled by the agent."
+    format: "integer"
+    statistic {
+      stat_type_name: "Total_Calls_Outbound"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "Internal_Calls"
+    label: "Internal"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of internal calls handled by the agent."
+    format: "integer"
+    statistic {
+      stat_type_name: "Total_Calls_Internal"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "Held"
+    label: "Held"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of calls put on hold by the agent."
+    format: "integer"
+    statistic {
+      stat_type_name: "Total_Number_on_Hold"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "Transferred_Made"
+    label: "Transfers Made"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of voice interactions transferred by this agent during the reporting interval."
+    format: "integer"
+    statistic {
+      stat_type_name: "Transfers_Made"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "Consult_Made"
+    label: "Consult Made"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of voice consultations made by this agent."
+    format: "integer"
+    statistic {
+      stat_type_name: "Calls_Consult_Made"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "Short_Talk"
+    label: "Short Talk < 10s"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of times this agent\'s DN completed being in Call status of less then specified duration (10s)."
+    format: "integer"
+    statistic {
+      stat_type_name: "Short_Talk"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      time_range: "Range0-10"
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "Avg_Handle_Time"
+    label: "AHT"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The average handling time represents the total time an agent spends handling inbound, outbound, internal, consultation, on hold and after call work tasks divided by the total number of inboud, outbound and internal calls."
+    format: "time"
+    statistic {
+      stat_type_name: "Average_Handle_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "Avg_ACW_Time"
+    label: "Avg ACW Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The average After-Call-Work time represents the total time an agent spends on ACW status divided by the total number of time this agent was on ACW."
+    format: "time"
+    statistic {
+      stat_type_name: "Average_ACW_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "Avg_Hold_Time"
+    label: "Avg Hold Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The average Hold time represents the total time an agent spends on Hold status divided by the total number of time this agent put customer on hold."
+    format: "time"
+    statistic {
+      stat_type_name: "Average_Hold_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "Avg_In_Time"
+    label: "Avg In Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The average In time represents the total time an agent spends handling an incoming calls divided by the total number of time this agent was handling inbound calls."
+    format: "time"
+    statistic {
+      stat_type_name: "Average_In_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "Avg_Out_Time"
+    label: "Avg Out Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The average Out time represents the total time an agent spends handling an outbound calls divided by the total number of time this agent was handling outbound calls."
+    format: "time"
+    statistic {
+      stat_type_name: "Average_Out_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "Avg_Ring_Time"
+    label: "Avg Ring Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The average Ring time represents the total time an agent desktop was ringing divided by the total number of time this agent desktop was ringing."
+    format: "time"
+    statistic {
+      stat_type_name: "Average_Ringing_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "VoiceCall"
+    }
+  }
+  column {
+    id: "Agent_Occupancy"
+    label: "Agent Occupancy"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vDBL
+    description: "The percent of time an agent spends handling calls versus their total login time."
+    format: "percent"
+    statistic {
+      stat_type_name: "Agent_Occupancy"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "VoiceCall"
+    }
+  }
+  collector_def {
+    allowed_object_type: SObjectAgent
+    allowed_object_type: SObjectAgentPlace
+    allowed_object_type: SObjectGroupAgents
+    allowed_object_type: SObjectGroupPlaces
+  }
+}

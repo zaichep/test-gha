@@ -1,0 +1,385 @@
+definition {
+  layout_type: ltPCREGULAR
+  guid: "000000000000-0000-0000-0000-00000020"
+  name: "Chat Service Level Performance"
+  description: "A report presenting the Chat Service Level Performance at the tenant level grouped by Business Attributes (referer, origination page) to summarize the contact center activity and the speed of answer for customer inquiries using the channel chat."
+  is_read_only: true
+  refresh_interval: 60
+  column {
+    id: "_Object$ID"
+    category: ccDIMENSION
+    type: ctFORMULA
+    vt: vINT
+    is_delta_key: true
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectID"
+    }
+  }
+  column {
+    id: "_Object$Type"
+    category: ccDIMENSION
+    type: ctFORMULA
+    vt: vINT
+    is_delta_key: true
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectType"
+    }
+  }
+  column {
+    id: "_Object$Name"
+    category: ccDIMENSION
+    type: ctFORMULA
+    vt: vSTR
+    format: "string"
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectName"
+    }
+  }
+  column {
+    id: "_GBK_PageTitle"
+    label: "PageTitle"
+    category: ccDIMENSION
+    type: ctSTATSERVER
+    vt: vSTR
+    format: "string"
+    statistic {
+      type: ssctGROUPKEY
+      group_key_alias: "PageTitle"
+    }
+  }
+  column {
+    id: "_GBK_Referrer"
+    label: "Referrer"
+    category: ccDIMENSION
+    type: ctSTATSERVER
+    vt: vSTR
+    format: "string"
+    statistic {
+      type: ssctGROUPKEY
+      group_key_alias: "Referrer"
+    }
+  }
+  column {
+    id: "Service_Level"
+    label: "Service Level"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vDBL
+    description: "The ratio of chats accepted to chats requested."
+    format: "percent"
+    statistic {
+      stat_type_name: "Tenant_GB_Service_Level"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      group_by_columns: "PageTitle"
+      group_by_columns: "Referrer"
+    }
+  }
+  column {
+    id: "Requested"
+    label: "Requested"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of chats requested by customer."
+    format: "integer"
+    statistic {
+      stat_type_name: "Tenant_GB_TotalNumber_InteractionCreated"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      group_by_columns: "PageTitle"
+      group_by_columns: "Referrer"
+    }
+  }
+  column {
+    id: "Answered"
+    label: "Answered"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of chats answered by Agent."
+    format: "integer"
+    statistic {
+      stat_type_name: "Tenant_GB_TotalNumber_InteractionAccepted"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      group_by_columns: "PageTitle"
+      group_by_columns: "Referrer"
+    }
+  }
+  column {
+    id: "Abandoned"
+    label: "Abandoned"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of chats abandoned while waiting. It only considers abandons before first acceptance by an agent."
+    format: "integer"
+    statistic {
+      stat_type_name: "Tenant_GB_TotalNumber_InteractionDeleted"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "CHAT_ABANDONED"
+      group_by_columns: "PageTitle"
+      group_by_columns: "Referrer"
+    }
+  }
+  column {
+    id: "Requested_15m"
+    label: "Requested (15min)"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of chats requested by customer within last 15 minutes."
+    format: "integer"
+    statistic {
+      stat_type_name: "Tenant_GB_TotalNumber_InteractionCreated"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      time_profile: "Last15M"
+      group_by_columns: "PageTitle"
+      group_by_columns: "Referrer"
+    }
+  }
+  column {
+    id: "Answered_15m"
+    label: "Answered (15min)"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of chats accepted by Agent within last 15 minutes."
+    format: "integer"
+    statistic {
+      stat_type_name: "Tenant_GB_TotalNumber_InteractionAccepted"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      time_profile: "Last15M"
+      group_by_columns: "PageTitle"
+      group_by_columns: "Referrer"
+    }
+  }
+  column {
+    id: "Abandoned_15m"
+    label: "Abandoned (15min)"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of chats abandoned while waiting within last 15 minutes."
+    format: "integer"
+    statistic {
+      stat_type_name: "Tenant_GB_TotalNumber_InteractionDeleted"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      time_profile: "Last15M"
+      filter: "CHAT_ABANDONED"
+      group_by_columns: "PageTitle"
+      group_by_columns: "Referrer"
+    }
+  }
+  column {
+    id: "WaitTime"
+    label: "Wait Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "Total time chats spent waiting before being abandoned or answered by Agent."
+    format: "time"
+    statistic {
+      stat_type_name: "Tenant_GB_TotalTime_Abandoned_or_Accepted"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "CHAT_ABANDONED"
+      group_by_columns: "PageTitle"
+      group_by_columns: "Referrer"
+    }
+  }
+  column {
+    id: "ServiceLevel_10s"
+    label: "Service Level (10sec)"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vDBL
+    description: "Measure the overall performance of the Contact Center across different services to handle customer inquiries. This metric is configured to monitor the service level within 10s."
+    format: "percent"
+    statistic {
+      stat_type_name: "Tenant_GB_Service_Level_InTimeRange"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      time_range: "Range0-10"
+      group_by_columns: "PageTitle"
+      group_by_columns: "Referrer"
+    }
+  }
+  column {
+    id: "ServiceLevel_30s"
+    label: "Service Level (30sec)"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vDBL
+    description: "Measure the overall performance of the Contact Center across different services to handle customer inquiries. This metric is configured to monitor the service level within 30s."
+    format: "percent"
+    statistic {
+      stat_type_name: "Tenant_GB_Service_Level_InTimeRange"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      time_range: "Range0-30"
+      group_by_columns: "PageTitle"
+      group_by_columns: "Referrer"
+    }
+  }
+  column {
+    id: "ServiceLevel_60s"
+    label: "Service Level (60sec)"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vDBL
+    description: "Measure the overall performance of the Contact Center across different services to handle customer inquiries. This metric is configured to monitor the service level within 60s."
+    format: "percent"
+    statistic {
+      stat_type_name: "Tenant_GB_Service_Level_InTimeRange"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      time_range: "Range0-60"
+      group_by_columns: "PageTitle"
+      group_by_columns: "Referrer"
+    }
+  }
+  column {
+    id: "Answered_10s"
+    label: "Answered (10sec)"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vDBL
+    description: "Measure the efficiency of the workload distributed from a service to the first customer representative.\nThis metric is configured to monitor the number of chats answered within 10s."
+    format: "percent"
+    statistic {
+      stat_type_name: "Tenant_GB_TotalNumberInTimeRangePercentage_InteractionAccepted"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      time_range: "Range0-10"
+      group_by_columns: "PageTitle"
+      group_by_columns: "Referrer"
+    }
+  }
+  column {
+    id: "Answered_30s"
+    label: "Answered (30sec)"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vDBL
+    description: "Measure the efficiency of the workload distributed from a service to the first customer representative.\nThis metric is configured to monitor the number of chats answered within 10s."
+    format: "percent"
+    statistic {
+      stat_type_name: "Tenant_GB_TotalNumberInTimeRangePercentage_InteractionAccepted"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      time_range: "Range0-30"
+      group_by_columns: "PageTitle"
+      group_by_columns: "Referrer"
+    }
+  }
+  column {
+    id: "Answered_60s"
+    label: "Answered (60sec)"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vDBL
+    description: "Measure the efficiency of the workload distributed from a service to the first customer representative.\nThis metric is configured to monitor the number of chats answered within 10s."
+    format: "percent"
+    statistic {
+      stat_type_name: "Tenant_GB_TotalNumberInTimeRangePercentage_InteractionAccepted"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      time_range: "Range0-60"
+      group_by_columns: "PageTitle"
+      group_by_columns: "Referrer"
+    }
+  }
+  column {
+    id: "ASA"
+    label: "Average Speed of Answer"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The average speed of answer by an agent."
+    format: "time"
+    statistic {
+      stat_type_name: "Tenant_GB_AverageTime_InteractionAccepted"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      group_by_columns: "PageTitle"
+      group_by_columns: "Referrer"
+    }
+  }
+  column {
+    id: "AAT"
+    label: "Average Time to Abandon"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The average time to abandon by the customer."
+    format: "time"
+    statistic {
+      stat_type_name: "Tenant_GB_AverageTime_InteractionDeleted"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "CHAT_ABANDONED"
+      group_by_columns: "PageTitle"
+      group_by_columns: "Referrer"
+    }
+  }
+  column {
+    id: "MaxWaitTime"
+    label: "Max Wait Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The upper limit of chats inquiries within last hour."
+    format: "time"
+    statistic {
+      stat_type_name: "Tenant_GB_Max_Wait_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      time_profile: "SlidingHour"
+      filter: "CHAT_ABANDONED"
+      group_by_columns: "PageTitle"
+      group_by_columns: "Referrer"
+    }
+  }
+  column {
+    id: "AWT"
+    label: "Average Wait Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The average waiting time of chat requested by a customer."
+    format: "time"
+    statistic {
+      stat_type_name: "Tenant_GB_AverageTime_Abandoned_or_Accepted"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "CHAT_ABANDONED"
+      group_by_columns: "PageTitle"
+      group_by_columns: "Referrer"
+    }
+  }
+  default_widget_body {
+    label: "Chat Service Level Performance"
+    size_x: 1
+    size_y: 2
+    view {
+      type: "BarView"
+      column_selector: "Service_Level"
+      sorting {
+        is_asc: true
+      }
+    }
+  }
+  collector_def {
+    allowed_object_type: SObjectTenant
+  }
+  collector_label: "multimedia"
+}

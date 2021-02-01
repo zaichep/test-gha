@@ -1,0 +1,135 @@
+groups:
+- name: Pulse {{ .chart | title }} Alerts
+  rules:
+  - alert: {{ include "alertName" (merge (dict "alert" "critical_running_instances") .) }}
+    expr: |-
+      (
+        sum by (statefulset) (kube_statefulset_status_replicas_ready{namespace="{{ .Release.Namespace }}",statefulset=~"{{ include "objectName" . }}-.*"}) /
+        sum by (statefulset) (kube_statefulset_status_replicas{namespace="{{ .Release.Namespace }}",statefulset=~"{{ include "objectName" . }}-.*"}) * 100
+        or on() vector(0)
+      ) < {{ .Values.alerts.thresholds.runningInstancesPercentage.critical }}
+    for: {{ .Values.alerts.conditionDurations.critical }}
+    labels:
+      action: email
+      severity: Critical {{- include "alertLabels" . | nindent 6 }}
+    annotations:
+      summary: "Pulse {{ .chart | title }} instances are down."
+      information: "Detected critical number of running {{`{{ $labels.statefulset }}`}} instances: {{`{{ $value }}`}}%"
+
+  - alert: {{ include "alertName" (merge (dict "alert" "low_running_instances") .) }}
+    expr: |-
+      (
+        sum by (statefulset) (kube_statefulset_status_replicas_ready{namespace="{{ .Release.Namespace }}",statefulset=~"{{ include "objectName" . }}-.*"}) /
+        sum by (statefulset) (kube_statefulset_status_replicas{namespace="{{ .Release.Namespace }}",statefulset=~"{{ include "objectName" . }}-.*"}) * 100
+        or on() vector(0)
+      ) < {{ .Values.alerts.thresholds.runningInstancesPercentage.warning }}
+    for: {{ .Values.alerts.conditionDurations.warning }}
+    labels:
+      action: email
+      severity: Warning {{- include "alertLabels" . | nindent 6 }}
+    annotations:
+      summary: "Pulse {{ .chart | title }} instances are down."
+      information: "Detected low number of running {{`{{ $labels.statefulset }}`}} instances: {{`{{ $value }}`}}%"
+
+  - alert: {{ include "alertName" (merge (dict "alert" "critical_memory") .) }}
+    expr: |-
+      sum by (pod) (container_memory_working_set_bytes{namespace="{{ .Release.Namespace }}",container!="",container!="POD",pod=~"{{ include "objectName" . }}-.*"}) /
+      sum by (pod) (kube_pod_container_resource_limits_memory_bytes{namespace="{{ .Release.Namespace }}",pod=~"{{ include "objectName" . }}-.*"}) * 100
+      >= {{ .Values.alerts.thresholds.usedMemoryPercentage.critical }}
+    for: {{ .Values.alerts.conditionDurations.critical }}
+    labels:
+      action: email
+      severity: Critical {{- include "alertLabels" . | nindent 6 }}
+    annotations:
+      summary: "Detected critical memory usage by Pulse {{ .chart | title }} Pod."
+      information: "Detected critical memory usage: {{`{{ $value }}`}}% by Pod: {{`{{ $labels.pod }}`}}"
+
+  - alert: {{ include "alertName" (merge (dict "alert" "high_memory") .) }}
+    expr: |-
+      sum by (pod) (container_memory_working_set_bytes{namespace="{{ .Release.Namespace }}",pod=~"{{ include "objectName" . }}-.*",container!="",container!="POD"}) /
+      sum by (pod) (kube_pod_container_resource_limits_memory_bytes{namespace="{{ .Release.Namespace }}",pod=~"{{ include "objectName" . }}-.*"}) * 100
+      >= {{ .Values.alerts.thresholds.usedMemoryPercentage.warning }}
+    for: {{ .Values.alerts.conditionDurations.warning }}
+    labels:
+      action: email
+      severity: Warning {{- include "alertLabels" . | nindent 6 }}
+    annotations:
+      summary: "Detected high memory usage by Pulse {{ .chart | title }} Pod."
+      information: "Detected high memory usage: {{`{{ $value }}`}}% by Pod: {{`{{ $labels.pod }}`}}"
+
+  - alert: {{ include "alertName" (merge (dict "alert" "critical_cpu") .) }}
+    expr: |-
+      sum by (pod) (rate(
+        container_cpu_usage_seconds_total{namespace="{{ .Release.Namespace }}",pod=~"{{ include "objectName" . }}-.*",container!="",container!="POD"}[2m])) /
+      sum by (pod) (
+        kube_pod_container_resource_limits_cpu_cores{namespace="{{ .Release.Namespace }}",pod=~"{{ include "objectName" . }}-.*"}) * 100
+      >= {{ .Values.alerts.thresholds.usedCpuPercentage.critical }}
+    for: {{ .Values.alerts.conditionDurations.critical }}
+    labels:
+      action: email
+      severity: Critical {{- include "alertLabels" . | nindent 6 }}
+    annotations:
+      summary: "Detected critical CPU usage by Pulse {{ .chart | title }} Pod."
+      information: "Detected critical CPU usage: {{`{{ $value }}`}}% by Pod: {{`{{ $labels.pod }}`}}"
+
+  - alert: {{ include "alertName" (merge (dict "alert" "high_cpu") .) }}
+    expr: |-
+      sum by (pod) (rate(
+        container_cpu_usage_seconds_total{namespace="{{ .Release.Namespace }}",pod=~"{{ include "objectName" . }}-.*",container!="",container!="POD"}[2m])) /
+      sum by (pod) (
+        kube_pod_container_resource_limits_cpu_cores{namespace="{{ .Release.Namespace }}",pod=~"{{ include "objectName" . }}-.*"}) * 100
+      >= {{ .Values.alerts.thresholds.usedCpuPercentage.warning }}
+    for: {{ .Values.alerts.conditionDurations.warning }}
+    labels:
+      action: email
+      severity: Warning {{- include "alertLabels" . | nindent 6 }}
+    annotations:
+      summary: "Detected high CPU usage by Pulse {{ .chart | title }} Pod."
+      information: "Detected high CPU usage: {{`{{ $value }}`}}% by Pod: {{`{{ $labels.pod }}`}}"
+
+  - alert: {{ include "alertName" (merge (dict "alert" "critical_disk") .) }}
+    expr: |-
+      (
+        sum by (persistentvolumeclaim) (kubelet_volume_stats_capacity_bytes{namespace="{{ .Release.Namespace }}",persistentvolumeclaim=~".*-{{ include "objectName" . }}-.*"}) -
+        sum by (persistentvolumeclaim) (kubelet_volume_stats_available_bytes{namespace="{{ .Release.Namespace }}",persistentvolumeclaim=~".*-{{ include "objectName" . }}-.*"})
+      ) /
+      sum by (persistentvolumeclaim) (kubelet_volume_stats_capacity_bytes{namespace="{{ .Release.Namespace }}",persistentvolumeclaim=~".*-{{ include "objectName" . }}-.*"}) * 100
+      >= {{ .Values.alerts.thresholds.usedDiskPercentage.critical }}
+    for: {{ .Values.alerts.conditionDurations.critical }}
+    labels:
+      action: email
+      severity: Critical {{- include "alertLabels" . | nindent 6 }}
+    annotations:
+      summary: "Detected critical disk usage by Pulse {{ .chart | title }} Pod."
+      information: "Detected critical disk usage: {{`{{ $value }}`}}% on PersistentVolumeClaim: {{`{{ $labels.persistentvolumeclaim }}`}}"
+
+  - alert: {{ include "alertName" (merge (dict "alert" "high_disk") .) }}
+    expr: |-
+      (
+        sum by (persistentvolumeclaim) (kubelet_volume_stats_capacity_bytes{namespace="{{ .Release.Namespace }}",persistentvolumeclaim=~".*-{{ include "objectName" . }}-.*"}) -
+        sum by (persistentvolumeclaim) (kubelet_volume_stats_available_bytes{namespace="{{ .Release.Namespace }}",persistentvolumeclaim=~".*-{{ include "objectName" . }}-.*"})
+      ) /
+      sum by (persistentvolumeclaim) (kubelet_volume_stats_capacity_bytes{namespace="{{ .Release.Namespace }}",persistentvolumeclaim=~".*-{{ include "objectName" . }}-.*"}) * 100
+      >= {{ .Values.alerts.thresholds.usedDiskPercentage.warning }}
+    for: {{ .Values.alerts.conditionDurations.warning }}
+    labels:
+      action: email
+      severity: Warning {{- include "alertLabels" . | nindent 6 }}
+    annotations:
+      summary: "Detected high disk usage by Pulse {{ .chart | title }} Pod."
+      information: "Detected high disk usage: {{`{{ $value }}`}}% on PersistentVolumeClaim: {{`{{ $labels.persistentvolumeclaim }}`}}"
+
+  - alert: {{ include "alertName" (merge (dict "alert" "critical_connected_servers") .) }}
+    expr: |-
+      (
+        sum by(pod) (pulse_statserver_server_connected_seconds{namespace="{{ .Release.Namespace }}",pod=~"{{ include "objectName" . }}-.*"} > bool 0) /
+        count by(pod) (pulse_statserver_server_connected_seconds{namespace="{{ .Release.Namespace }}",pod=~"{{ include "objectName" . }}-.*"}) * 100
+        or on() vector(0)
+      ) < 100
+    for: {{ .Values.alerts.conditionDurations.critical }}
+    labels:
+      action: email
+      severity: Critical {{- include "alertLabels" . | nindent 6 }}
+    annotations:
+      summary: "Pulse {{ .chart | title }} is not connected to servers."
+      information: "Detected critical number of servers the StatServer {{`{{ $labels.pod }}`}} is connected to: {{`{{ $value }}`}}%"

@@ -1,0 +1,10 @@
+# Helm chart values overrides common for all Azure environments
+
+# https://intranet.genesys.com/pages/viewpage.action?spaceKey=RP&title=Pulse+9.0.0+Iteration+16+HLD+-+Pulse+Multi+Cloud
+# 1 instances
+replicaCount: 1
+
+priorityClassName: genesysengage-medium-priority
+
+nodeSelector:
+  genesysengage.com/nodepool: general

@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "pulse-manage-agents.fullname" . }}
+  labels:
+    {{- include "pulse-manage-agents.labels" . | nindent 4 }}
+spec:
+{{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+{{- end }}
+  selector:
+    matchLabels:
+      {{- include "pulse-manage-agents.selectorLabels" . | nindent 8 }}
+  template:
+    metadata:
+      labels:
+        {{- include "pulse-manage-agents.selectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      dnsPolicy: {{ .Values.dnsPolicy | default "ClusterFirst" }}
+      {{- if .Values.dnsConfig }}
+      dnsConfig:
+      {{- toYaml .Values.dnsConfig | nindent 8}}
+      {{- end }}
+      serviceAccountName: {{ template "pulse-manage-agents.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: {{ printf "%s%s:%s" .Values.image.repository .Values.image.name (coalesce .Values.image.tag .Chart.AppVersion ) | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+          - name: K8S_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: GWS_HOST
+            value: {{ .Values.env.GWS_HOST | quote }}
+          - name: GWS_PORT
+            value: {{ .Values.env.GWS_PORT | quote }}
+          - name: MONITORING_PORT
+            value: {{ .Values.env.MONITORING_PORT | quote }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetport }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.probes.livenessProbe.httpGet.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.probes.livenessProbe.httpGet.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.livenessProbe.httpGet.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.probes.readinessProbe.httpGet.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.probes.readinessProbe.httpGet.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.readinessProbe.httpGet.periodSeconds }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: logs
+              mountPath: /data/log
+
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName }}
+      {{- end }}
+
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- if .Values.affinity }}
+      affinity: {{- toYaml .Values.affinity | nindent 8 }}
+      {{- else }}
+      {{- include "pulse-manage-agents.affinity" . | nindent 6 }}
+      {{- end }}
+
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      volumes:
+      - name: logs
+        hostPath:
+          path: /mnt/log

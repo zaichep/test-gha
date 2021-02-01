@@ -1,0 +1,8 @@
+definition {
+  layout_type: ltSTATICTEXT
+  name: "Text Widget"
+  guid: "000000000000-0000-0000-0000-00000022"
+  description: "Template for creating simple static text widget."
+  is_read_only: true
+  refresh_interval: 60
+}

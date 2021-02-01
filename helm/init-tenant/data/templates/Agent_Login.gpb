@@ -1,0 +1,272 @@
+definition {
+  guid: "000000000000-0000-0000-0000-00000003"
+  layout_type: ltPCREGULAR
+  name: "Agent Login"
+  description: "This report provides a quick analysis indicating some kind of action and provides the primary view used to determine if the contact center is meeting criteria or level of service that customers expect."
+  is_read_only: true
+  refresh_interval: 60
+  default_widget_body {
+    size_x: 2
+    size_y: 2
+    label: "Agent Login"
+    view {
+      type: "MiniGridView"
+      column_selector: "Login_Time"
+    }
+    column_visibility: {
+      column_id: "Current_Status_KVP"
+      visibility: vHIDDENINWIDGET
+    }
+  }
+  column {
+    id: "_Object$ID"
+    category: ccDIMENSION
+    type: ctFORMULA
+    vt: vINT
+    is_delta_key: true
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectID"
+    }
+  }
+  column {
+    id: "_Object$Type"
+    category: ccDIMENSION
+    type: ctFORMULA
+    vt: vINT
+    is_delta_key: true
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectType"
+    }
+  }
+  column {
+    id: "_Object$Name"
+    category: ccDIMENSION
+    type: ctFORMULA
+    vt: vSTR
+    format: "string"
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectName"
+    }
+  }
+  column {
+    id: "Current_Status"
+    label: "Current Status"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vSTR
+    description: "The current state (status) of a specified agent. Some examples of an agent\'s status include CallInbound, CallOutbound, and CallConsult."
+    format: "string"
+    show_state_icon: true
+    statistic {
+      stat_type_name: "ExtendedCurrentStatus"
+      notification_mode: SChangesBasedNotification
+      adm_software_reasons: true
+      adm_hardware_reasons: true
+    }
+  }
+  column {
+    id: "Status_Time"
+    label: "Time in Status"
+    category: ccMEASURE
+    type: ctFORMULA
+    vt: vLONG
+    description: "The time agent spent in Current State."
+    format: "time"
+    formula {
+      type: ftPCSCRIPT
+      text: "Result = G.GetStatusDuration(Data.Current_Status.Value);"
+    }
+  }
+  column {
+    id: "Login_Time"
+    label: "Login Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total time that monitored agents were logged in. Applied to GroupAgents and GroupPlaces, this stat type calculates the total login time for all the agents belonging to the specified group."
+    format: "time"
+    statistic {
+      stat_type_name: "Total_Login_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Continuous_Login_Time"
+    label: "Continuous Login Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "Current continuous time Agent remained logged in. Applied to GroupAgents and GroupPlaces this statistics calculates total of all Agents (Places) in the Group."
+    format: "time"
+    statistic {
+      stat_type_name: "Continuous_Login_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Reason"
+    label: "Reason"
+    category: ccMEASURE
+    type: ctFORMULA
+    vt: vSTR
+    description: "Reason(s) selected by Agent."
+    format: "string"
+    formula {
+      type: ftPCSCRIPT
+      text: "Result = G.GetReasonCodes(Data.Current_Status.Value);"
+    }
+  }
+  column {
+    id: "EmployeeId"
+    label: "Employee Id"
+    category: ccMEASURE
+    type: ctFORMULA
+    vt: vSTR
+    description: "Agent\'s Employee ID."
+    format: "string"
+    formula {
+      type: ftPCSCRIPT
+      text: "Result = G.GetEmployeeId(Data.Current_Status.Value);"
+    }
+  }
+  column {
+    id: "Place"
+    label: "Place"
+    category: ccMEASURE
+    type: ctFORMULA
+    vt: vSTR
+    description: "Agent\'s Place."
+    format: "string"
+    formula {
+      type: ftPCSCRIPT
+      text: "Result = G.GetPlace(Data.Current_Status.Value);"
+    }
+  }
+  column {
+    id: "Switch"
+    label: "Switch"
+    category: ccMEASURE
+    type: ctFORMULA
+    vt: vSTR
+    description: "Agent\'s Switch."
+    format: "string"
+    formula {
+      type: ftPCSCRIPT
+      text: "Result = G.GetSwitch(Data.Current_Status.Value);"
+    }
+  }
+  column {
+    id: "LoginId"
+    label: "Login Id"
+    category: ccMEASURE
+    type: ctFORMULA
+    vt: vSTR
+    description: "Agent\'s Login ID."
+    format: "string"
+    formula {
+      type: ftPCSCRIPT
+      text: "Result = G.GetLoginId(Data.Current_Status.Value);"
+    }
+  }
+  column {
+    id: "Extension"
+    label: "Extension"
+    category: ccMEASURE
+    type: ctFORMULA
+    vt: vSTR
+    description: "Agent\'s Extension."
+    format: "string"
+    formula {
+      type: ftPCSCRIPT
+      text: "Result = G.GetExtension(Data.Current_Status.Value);"
+    }
+  }
+  column {
+    id: "Position"
+    label: "Position"
+    category: ccMEASURE
+    type: ctFORMULA
+    vt: vSTR
+    description: "Agent\'s Position."
+    format: "string"
+    formula {
+      type: ftPCSCRIPT
+      text: "Result = G.GetPosition(Data.Current_Status.Value);"
+    }
+  }
+  column {
+    id: "Current_Status_KVP"
+    label: "Current Status KVP"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vSTR
+    description: "The current state (status) of a specified agent to use in formulas for KVPs (Service Type, Service Sub Type, Customer Segment, Business Result)."
+    format: "string"
+    show_state_icon: true
+    statistic {
+      stat_type_name: "ExtendedCurrentStatus"
+      notification_mode: SChangesBasedNotification
+      adm_user_data: true
+    }
+  }
+  column {
+    id: "Service_Type"
+    label: "Service Type"
+    category: ccMEASURE
+    type: ctFORMULA
+    vt: vSTR
+    description: "Service Type associated to the call segmentation. Must be defined in the callflow as KVP."
+    format: "string"
+    formula {
+      type: ftPCSCRIPT
+      text: "Result = G.GetServiceType(Data.Current_Status_KVP.Value);"
+    }
+  }
+  column {
+    id: "Service_SubType"
+    label: "Service Sub Type"
+    category: ccMEASURE
+    type: ctFORMULA
+    vt: vSTR
+    description: "Service Sub Type associated to the call segmentation. Must be defined in the callflow as KVP."
+    format: "string"
+    formula {
+      type: ftPCSCRIPT
+      text: "Result = G.GetServiceSubType(Data.Current_Status_KVP.Value);"
+    }
+  }
+  column {
+    id: "Customer_Segment"
+    label: "Customer Segment"
+    category: ccMEASURE
+    type: ctFORMULA
+    vt: vSTR
+    description: "Customer Segment associated to the call segmentation. Must be defined in the callflow as KVP."
+    format: "string"
+    formula {
+      type: ftPCSCRIPT
+      text: "Result = G.GetCustomerSegment(Data.Current_Status_KVP.Value);"
+    }
+  }
+  column {
+    id: "Business_Result"
+    label: "Business Result"
+    category: ccMEASURE
+    type: ctFORMULA
+    vt: vSTR
+    description: "Business Result associated to the call segmentation. Must be defined in the callflow as KVP."
+    format: "string"
+    formula {
+      type: ftPCSCRIPT
+      text: "Result = G.GetBusinessResult(Data.Current_Status_KVP.Value);"
+    }
+  }
+  collector_def {
+    allowed_object_type: SObjectAgent
+  }
+}

@@ -1,0 +1,30 @@
+tenant:
+  id: "d3a17e88-66df-46de-9e61-6486f6440083"
+  sid: "0083"
+
+templates:
+  - Agent_Group_Status.gpb
+  - Agent_KPIs.gpb
+  - Agent_Login.gpb
+  - Alert_Widget.gpb
+  - Callback_Activity.gpb
+  - Campaign_Activity.gpb
+  - Campaign_Callback_Status.gpb
+  - Campaign_Group_Activity.gpb
+  - Campaign_Group_Status.gpb
+  - Chat_Agent_Activity.gpb
+  - Chat_Queue_Activity.gpb
+  - Chat_Service_Level_Performance.gpb
+  - Chat_Waiting_Statistics.gpb
+  - Email_Agent_Activity.gpb
+  - Email_Queue_Activity.gpb
+  - Facebook_Media_Activity.gpb
+  - IFRAME.gpb
+  - IWD_Agent_Activity.gpb
+  - IWD_Queue_Activity.gpb
+  - Queue_KPIs.gpb
+  - Queue_Overflow_Reason.gpb
+  - Static_Text.gpb
+  - Twitter_Media_Activity.gpb
+  - eServices_Agent_Activity.gpb
+  - eServices_Queue_KPIs.gpb

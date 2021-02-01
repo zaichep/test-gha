@@ -1,0 +1,19 @@
+{{- if .Values.alerts.enabled -}}
+{{- $files := .Files }}
+{{- $namespace := .Release.Namespace }}
+{{- range $path, $_ :=  $files.Glob  (printf "alerts/**.yaml" ) }}
+{{- $chart := (regexReplaceAll "^alerts/([^/]+)/.*" $path "${1}") }}
+{{- $name := ($path | base | replace ".yaml" "") }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  namespace: {{ $namespace }}
+  name: {{ include "objectName" (merge (dict "name" (printf "%s-%s" $chart $name)) $) }}
+  labels:
+    {{- include "chart.labels" (merge (dict "name" $chart) $) | nindent 4 }}
+    genesysengage/monitoring: prometheus
+spec:
+  {{- tpl ($files.Get $path) (merge (dict "chart" $chart) $) | nindent 2 }}
+{{- end }}
+{{- end -}}

@@ -1,0 +1,190 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  name: {{ include "objectName" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  clusterIP: None
+  ports:
+  {{- range $key, $value := .Values.lds.ports }}
+  - name: {{ $key }}
+    port: {{ $value }}
+  {{- end }}
+  selector:
+    {{- include "chart.selectorLabels" . | nindent 4 }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  name: {{ include "objectName" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "chart.selectorLabels" . | nindent 6 }}
+
+  serviceName: {{ include "objectName" . }}
+
+  volumeClaimTemplates:
+  {{- range .Values.volumeClaims }}
+  - metadata:
+      labels:
+        {{- include "chart.selectorLabels" $ | nindent 8 }}
+      name: {{ .name }}
+      namespace: {{ $.Release.Namespace }}
+    spec:
+      accessModes: {{ toYaml .accessModes | nindent 8 }}
+      resources:
+        requests:
+          storage: {{ .capacity }}
+      storageClassName: {{ .class }}
+  {{- end}}
+
+  template:
+    metadata:
+      annotations:
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "chart.selectorLabels" . | nindent 8 }}
+      namespace: {{ .Release.Namespace | quote }}
+    spec:
+      serviceAccountName: {{ include "objectName" . | quote }}
+      {{- if .Values.affinity }}
+      affinity: {{- toYaml .Values.affinity | nindent 8 }}
+      {{- else }}
+      {{- include "chart.affinity" . | nindent 6 }}
+      {{- end }}
+
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      dnsPolicy: {{ .Values.dnsPolicy | default "ClusterFirst" }}
+      {{- with .Values.dnsConfig }}
+      dnsConfig: {{- toYaml . | nindent 8}}
+      {{- end }}
+      
+      volumes:
+      {{- range .Values.volumes }}
+      - {{- toYaml . | nindent 8 }}
+      {{- end}}
+      - name: logs
+        hostPath:
+          path: /mnt/log
+
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+
+      containers:
+      #################################################################
+      - {{- include "common.csproxy" (list .) | nindent 8 }}
+
+      #################################################################
+      - name: lds
+        env:
+        - name: K8S_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: TENANT_SID
+          value: {{ .Values.tenant.sid | quote }}
+        - name: GCTI_GLM_LICENSE_DISABLE
+          value: "1"
+        {{- with .Values.lds.params }}
+        - name: APP_NAME
+          value: {{ include "cfgAppName" (merge (dict "name" "lds") $) | quote }}
+        - name: SELECT_APP_BY_INDEX
+          value: {{ .selectAppByIndex | quote }}
+        - name: CFG_HOST
+          value: {{ if .cfgHost }}{{ .cfgHost | quote }}{{ else }}"localhost"{{ end }}
+        - name: CFG_PORT
+          value: {{ if .cfgPort }}{{ .cfgPort | quote }}{{ else }}{{ $.Values.csproxy.ports.default | quote }}{{ end }}
+        {{- end}}
+        image: {{ printf "%s%s:%s" .Values.image.repository .Values.lds.image.name (coalesce .Values.lds.image.tag .Values.image.tag .Chart.AppVersion ) | quote }}
+        imagePullPolicy: {{ .Values.lds.image.pullPolicy | default .Values.image.pullPolicy }}
+        {{- with .Values.lds.probes }}
+        {{- if not .disabled }}
+        startupProbe:
+          httpGet:
+            path: "/liveness?sender-live-tout=0&receiver-live-tout=0"
+            port: http
+          {{- toYaml .startupProbe | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: "/liveness?sender-live-tout=0&receiver-live-tout=0"
+            port: http
+          {{- toYaml .livenessProbe | nindent 10 }}
+        readinessProbe:
+          httpGet:
+            path: /readiness
+            port: http
+          {{- toYaml .readinessProbe | nindent 10 }}
+        {{- end}}
+        {{- end}}
+        ports:
+        {{- range $key, $value := .Values.lds.ports }}
+        - name: {{ $key }}
+          containerPort: {{ $value }}
+          protocol: TCP
+        {{- end }}
+        {{- with .Values.lds.resources }}
+        {{- if not .disabled }}
+        resources:
+          requests: {{ toYaml .requests | nindent 12 }}
+          limits: {{ toYaml .limits | nindent 12 }}
+        {{- end}}
+        {{- end}}
+        securityContext:
+          {{- toYaml .Values.lds.securityContext | nindent 10 }}
+        volumeMounts:
+          - name: logs
+            mountPath: /data/log
+
+      #################################################################
+      - name: monitor-sidecar
+        env:
+        - name: K8S_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NAMESPACE
+          value: {{ .Release.Namespace | quote }}
+        - name: TENANT_SID
+          value: {{ .Values.tenant.sid | quote }}
+        - name: LDS_URL
+          value: {{ printf "http://localhost:%d/metrics" (.Values.lds.ports.http | int) | quote }}
+        {{- with .Values.monitorSidecar.params }}
+        - name: LDS_POLL_PERIOD
+          value: {{ .pollPeriod | quote }}
+        - name: INITIAL_DELAY
+          value: {{ .initialDelay | quote }}
+        - name: PUSHGATE_URL
+          value: {{ .pushGateUrl | quote }}
+        {{- end}}
+        image: {{ printf "%s%s:%s" .Values.image.repository .Values.monitorSidecar.image.name (coalesce .Values.monitorSidecar.image.tag .Values.image.tag .Chart.AppVersion ) | quote }}
+        imagePullPolicy: {{ .Values.monitorSidecar.image.pullPolicy | default .Values.image.pullPolicy }}
+        {{- with .Values.monitorSidecar.resources }}
+        {{- if not .disabled }}
+        resources:
+          requests: {{ toYaml .requests | nindent 12 }}
+          limits: {{ toYaml .limits | nindent 12 }}
+        {{- end}}
+        {{- end}}
+        securityContext:
+          {{- toYaml .Values.monitorSidecar.securityContext | nindent 10 }}

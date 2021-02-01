@@ -1,0 +1,255 @@
+definition {
+  guid: "000000000000-0000-0000-0000-00000004"  
+  layout_type: ltPCREGULAR
+  name: "Campaign Activity"
+  description: "Monitor the activity associated with outbound campaigns."
+  is_read_only: true
+  refresh_interval: 60
+  column {
+    id: "_Object$ID"
+    category: ccDIMENSION
+    type: ctFORMULA
+    is_delta_key: true
+    vt: vINT
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectID"
+    }
+  }
+  column {
+    id: "_Object$Type"
+    category: ccDIMENSION
+    type: ctFORMULA
+    is_delta_key: true
+    vt: vINT
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectType"
+    }
+  }
+  column {
+    id: "_Object$Name"
+    category: ccDIMENSION
+    format: "string"
+    vt: vSTR
+    type: ctFORMULA
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectName"
+    }
+  }
+  column {
+    id: "Campaign_Hit_Ratio"
+    label: "Hit Ratio"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The percentage of successful dialing attempts initiated by a Campaign Manager with a call result of Answer (DialAnswer)-that is, a call is answered by a human voice-relative to the number of all dialing attempts made (DialMade) during the same time period."
+    format: "integer"
+    statistic {
+      stat_type_name: "CampHitRatio"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Campaign_Estimated_time_to_Complete"
+    label: "Estimated Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The estimated time, in minutes, to complete a campaign or calling list."
+    format: "time"
+    statistic {
+      stat_type_name: "CampEstimatedTimeToComplete"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Campaign_Records_Completed"
+    label: "Records Completed"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of leads from calling lists (counting records from the same lead as one record) processed to the point that no further action will be taken."
+    format: "integer"
+    statistic {
+      stat_type_name: "CampRecordsCompleted"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Campaign_Dialed_Abandoned"
+    label: "Dialed Abandoned"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of dialing attempts with a call result of Abandon. CampAbandoned statistics pertain to a specified campaign or to a specified calling list."
+    format: "integer"
+    statistic {
+      stat_type_name: "CampAbandoned"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Campaign_Dialed_Answering_Machine"
+    label: "Dialed Answering Machine"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of unsuccessful dialing attempts initiated by a Campaign Manager with a call result of Answering Machine Detected; that is, the Campaign Manager dropped the call because an answering machine was detected on the called party\'s side."
+    format: "integer"
+    statistic {
+      stat_type_name: "CampAnsweringMachine"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Campaign_Answers"
+    label: "Answers"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of dialing attempts initiated by a Campaign Manager with a call result of Answer (when a call is answered by a human voice). In some contact centers, the call result can also mean Right Party Contacted; that is, the call is answered by a live person who is not the Wrong Party."
+    format: "integer"
+    statistic {
+      stat_type_name: "CampAnswers"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Campaign_Attempt_Busies"
+    label: "Attempt Busies"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of unsuccessful dialing attempts initiated by a Campaign Manager with a call result of Busy; that is, the call does not go through because of a busy signal for the called party."
+    format: "integer"
+    statistic {
+      stat_type_name: "CampBusy"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Campaign_Attempts_Cancelled"
+    label: "Attempts Cancelled"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of unsuccessful dialing attempts initiated by a Campaign Manager with a call result of Cancel."
+    format: "integer"
+    statistic {
+      stat_type_name: "CampCancel"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Campaign_Attempts_made"
+    label: "Attempts made"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "Total number of all dialing attempts made (initiated) by a Campaign Manager with any call results."
+    format: "integer"
+    statistic {
+      stat_type_name: "CampDialMade"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Campaign_DoNotCall_Results"
+    label: "DoNotCall Results"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of completed dialing attempts initiated by a Campaign Manager with a call result of DoNotCall; that is, the customer asked to be put onto the \'Do not call list\' when the call was intercepted by an operator. This case is also considered as an unsuccessful dial attempt."
+    format: "integer"
+    statistic {
+      stat_type_name: "CampDoNotCall"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Campaign_Dropped_Results"
+    label: "Dropped Results"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of unsuccessful dialing attempts initiated by a Campaign Manager with a call result of Dropped. Dropped calls are those that are answered at the destination but then abandoned in the queue because no agent is available to take them."
+    format: "integer"
+    statistic {
+      stat_type_name: "CampDropped"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Campaign_Fax_Modem_Results"
+    label: "Fax Modem Results"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of unsuccessful dialing attempts initiated by a Campaign Manager with a call result of Fax Detected or Modem Detected."
+    format: "integer"
+    statistic {
+      stat_type_name: "CampFaxModem"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Campaign_No_Answer_Result"
+    label: "No Answer Result"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of unsuccessful dialing attempts initiated by a Campaign Manager with a call result of No Answer."
+    format: "integer"
+    statistic {
+      stat_type_name: "CampNoAnswer"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Campaign_Wrong_Party_Result"
+    label: "Wrong Party Result"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of unsuccessful dialing attempts initiated by a Campaign Manager with a call result of Wrong Party; that is, the call is answered by a live person but not the intended person."
+    format: "integer"
+    statistic {
+      stat_type_name: "CampNoRPC"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Campaign_SIT_Detected"
+    label: "SIT Detected"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of unsuccessful dialing attempts initiated by a Campaign Manager with a call result of DIALSITDetected. A Special Information Tone (SIT) identifies a network-provided announcement and precedes a machine-generated announcement when, for instance, a telephone number is invalid, no circuit is available, or a recorded operator message intercepts a call."
+    format: "integer"
+    statistic {
+      stat_type_name: "CampSITDetected"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  collector_def {
+    allowed_object_type: SObjectCallingList
+    allowed_object_type: SObjectCampaign
+  }
+}

@@ -1,0 +1,146 @@
+groups:
+- name: Pulse Alerts
+  rules:
+  - alert: {{ include "alertName" (merge (dict "alert" "service_down") .) }}
+    expr: (sum by (service) (up{service="{{ include "chart.fullname" . }}"}) or on() vector(0)) == 0
+    for: {{ .Values.alerts.conditionDurations.critical }}
+    labels:
+      action: email
+      severity: Critical {{- include "alertLabels" . | nindent 6 }}
+    annotations:
+      summary: "All Pulse instances are down."
+      information: "Number of running {{`{{ $labels.service }}`}} instances: {{`{{ $value }}`}}"
+
+  - alert: {{ include "alertName" (merge (dict "alert" "critical_running_instances") .) }}
+    expr: |-
+      (
+        sum by (deployment) (kube_deployment_status_replicas_available{namespace="{{ .Release.Namespace }}",deployment="{{ include "objectName" . }}"}) /
+        sum by (deployment) (kube_deployment_status_replicas{namespace="{{ .Release.Namespace }}",deployment="{{ include "objectName" . }}"}) * 100
+        or on() vector(0)
+      ) < {{ .Values.alerts.thresholds.runningInstancesPercentage.critical }}
+    for: {{ .Values.alerts.conditionDurations.critical }}
+    labels:
+      action: email
+      severity: Critical {{- include "alertLabels" . | nindent 6 }}
+    annotations:
+      summary: "Pulse {{ .chart | title }} instances are down."
+      information: "Detected critical number of running {{`{{ $labels.deployment }}`}} instances: {{`{{ $value }}`}}%"
+
+  - alert: {{ include "alertName" (merge (dict "alert" "low_running_instances") .) }}
+    expr: |-
+      (
+        sum by (deployment) (kube_deployment_status_replicas_available{namespace="{{ .Release.Namespace }}",deployment="{{ include "objectName" . }}"}) /
+        sum by (deployment) (kube_deployment_status_replicas{namespace="{{ .Release.Namespace }}",deployment="{{ include "objectName" . }}"}) * 100
+        or on() vector(0)
+      ) < {{ .Values.alerts.thresholds.runningInstancesPercentage.warning }}
+    for: {{ .Values.alerts.conditionDurations.warning }}
+    labels:
+      action: email
+      severity: Warning {{- include "alertLabels" . | nindent 6 }}
+    annotations:
+      summary: "Pulse {{ .chart | title }} instances are down."
+      information: "Detected low number of running {{`{{ $labels.deployment }}`}} instances: {{`{{ $value }}`}}%"
+
+  - alert: {{ include "alertName" (merge (dict "alert" "critical_memory") .) }}
+    expr: |-
+      sum by (pod) (jvm_memory_used_bytes{service="{{ include "chart.fullname" . }}"}) /
+      sum by (pod) (jvm_memory_max_bytes{service="{{ include "chart.fullname" . }}"}) * 100
+      >= {{ .Values.alerts.thresholds.usedMemoryPercentage.critical }}
+    for: {{ .Values.alerts.conditionDurations.critical }}
+    labels:
+      action: email
+      severity: Critical {{- include "alertLabels" . | nindent 6 }}
+    annotations:
+      summary: "Detected critical memory usage by Pulse container."
+      information: "Detected critical memory usage: {{`{{ $value }}`}}% by pod: {{`{{ $labels.pod }}`}}"
+  
+  - alert: {{ include "alertName" (merge (dict "alert" "high_memory") .) }}
+    expr: |-
+      sum by (pod) (jvm_memory_used_bytes{service="{{ include "chart.fullname" . }}"}) /
+      sum by (pod) (jvm_memory_max_bytes{service="{{ include "chart.fullname" . }}"}) * 100
+      >= {{ .Values.alerts.thresholds.usedMemoryPercentage.warning }}
+    for: {{ .Values.alerts.conditionDurations.warning }}
+    labels:
+      action: email
+      severity: Warning {{- include "alertLabels" . | nindent 6 }}
+    annotations:
+      summary: "Detected high memory usage by Pulse container."
+      information: "Detected high memory usage: {{`{{ $value }}`}}% by pod: {{`{{ $labels.pod }}`}}"
+
+  - alert: {{ include "alertName" (merge (dict "alert" "critical_cpu") .) }}
+    expr: |-
+      sum by (pod) (
+        process_cpu_usage{service="{{ include "chart.fullname" . }}"} * 100
+      ) >= {{ .Values.alerts.thresholds.usedCpuPercentage.critical }}
+    for: {{ .Values.alerts.conditionDurations.critical }}
+    labels:
+      action: email
+      severity: Critical {{- include "alertLabels" . | nindent 6 }}
+    annotations:
+      summary: "Detected critical cpu usage by Pulse container."
+      information: "Detected critical cpu usage: {{`{{ $value }}`}}% by pod: {{`{{ $labels.pod }}`}}"
+
+  - alert: {{ include "alertName" (merge (dict "alert" "high_cpu") .) }}
+    expr: |-
+      sum by (pod) (
+        process_cpu_usage{service="{{ include "chart.fullname" . }}"} * 100
+      ) >= {{ .Values.alerts.thresholds.usedCpuPercentage.warning }}
+    for: {{ .Values.alerts.conditionDurations.warning }}
+    labels:
+      action: email
+      severity: Warning {{- include "alertLabels" . | nindent 6 }}
+    annotations:
+      summary: "Detected high cpu usage by Pulse container."
+      information: "Detected high cpu usage: {{`{{ $value }}`}}% by pod: {{`{{ $labels.pod }}`}}"
+
+  - alert: {{ include "alertName" (merge (dict "alert" "critical_5xx") .) }}
+    expr: |-
+      sum by (pod) (rate(
+        http_server_requests_seconds_count{service="{{ include "chart.fullname" . }}", status=~"5.*"}[5m]
+      )) > {{ .Values.alerts.thresholds.request5xxPerSecond.critical }}
+    for: {{ .Values.alerts.conditionDurations.critical }}
+    labels:
+      action: email
+      severity: Critical {{- include "alertLabels" . | nindent 6 }}
+    annotations:
+      summary: "Detected critical 5xx errors per second for Pulse container."
+      information: "5xx errors per second: {{`{{ $value }}`}}% for pod: {{`{{ $labels.pod }}`}}"
+
+  - alert: {{ include "alertName" (merge (dict "alert" "high_5xx") .) }}
+    expr: |-
+      sum by (pod) (rate(
+        http_server_requests_seconds_count{service="{{ include "chart.fullname" . }}", status=~"5.*"}[5m]
+      )) > {{ .Values.alerts.thresholds.request5xxPerSecond.warning }}
+    for: {{ .Values.alerts.conditionDurations.warning }}
+    labels:
+      action: email
+      severity: Warning {{- include "alertLabels" . | nindent 6 }}
+    annotations:
+      summary: "Detected high 5xx errors per second for Pulse container."
+      information: "5xx errors per second: {{`{{ $value }}`}}% for pod: {{`{{ $labels.pod }}`}}"
+
+  - alert: {{ include "alertName" (merge (dict "alert" "critical_hikari_cp") .) }}
+    expr: |-
+      sum by (pod) (hikaricp_connections_active{service="{{ include "chart.fullname" . }}"}) /
+      sum by (pod) (hikaricp_connections{service="{{ include "chart.fullname" . }}"}) * 100
+      >= {{ .Values.alerts.thresholds.hikariActiveConnectionsPercentage.critical }}
+    for: {{ .Values.alerts.conditionDurations.critical }}
+    labels:
+      action: email
+      severity: Critical {{- include "alertLabels" . | nindent 6 }}
+    annotations:
+      summary: "Detected critical Hikari connections pool usage by Pulse container."
+      information: "Detected critical Hikari connections pool usage: {{`{{ $value }}`}}% by pod: {{`{{ $labels.pod }}`}}"
+
+  - alert: {{ include "alertName" (merge (dict "alert" "high_hikari_cp") .) }}
+    expr: |-
+      sum by (pod) (hikaricp_connections_active{service="{{ include "chart.fullname" . }}"}) /
+      sum by (pod) (hikaricp_connections{service="{{ include "chart.fullname" . }}"}) * 100
+      >= {{ .Values.alerts.thresholds.hikariActiveConnectionsPercentage.warning }}
+    for: {{ .Values.alerts.conditionDurations.warning }}
+    labels:
+      action: email
+      severity: Warning {{- include "alertLabels" . | nindent 6 }}
+    annotations:
+      summary: "Detected high Hikari connections pool usage by Pulse container."
+      information: "Detected high Hikari connections pool usage: {{`{{ $value }}`}}% by pod: {{`{{ $labels.pod }}`}}"

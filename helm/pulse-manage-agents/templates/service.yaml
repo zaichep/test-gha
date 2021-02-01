@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "pulse-manage-agents.fullname" . }}
+  labels:
+    {{- include "pulse-manage-agents.labels" . | nindent 8 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetport }}
+      protocol: TCP
+      name: http
+
+    - port: {{ .Values.env.MONITORING_PORT }}
+      targetPort: {{ .Values.env.MONITORING_PORT }}
+      protocol: TCP
+      name: monitor
+  selector:
+    {{- include "pulse-manage-agents.selectorLabels" . | nindent 8 }}

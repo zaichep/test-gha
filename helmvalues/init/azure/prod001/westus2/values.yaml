@@ -1,0 +1,4 @@
+# Helm chart values overrides only for Azure Prod001 westus2
+tenant: ""
+
+tenants:

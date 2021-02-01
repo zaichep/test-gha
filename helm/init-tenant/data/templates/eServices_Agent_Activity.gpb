@@ -1,0 +1,315 @@
+definition {
+  guid: "000000000000-0000-0000-0000-0000000c"
+  layout_type: ltPCREGULAR
+  name: "eServices Agent Activity"
+  description: "Monitor agent group KPIs related to eServices (chat, email, SM) media to monitor and see if behavior problems exist that need to be addressed."
+  is_read_only: true
+  refresh_interval: 60
+  default_widget_body {
+    size_x: 1
+    size_y: 2
+    label: "eServices Agent Activity"
+    view {
+      type: "PagedKPIView"
+      column_selector: "Email_Offered"
+      column_selector: "Chat_Offered"
+      column_selector: "Social_Media_Offered"
+      column_selector: "Email_Accepted"
+      column_selector: "Chat_Accepted"
+      column_selector: "Social_Media_Accepted"
+    }
+  }
+  column {
+    id: "_Object$ID"
+    category: ccDIMENSION
+    type: ctFORMULA
+    vt: vINT
+    is_delta_key: true
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectID"
+    }
+  }
+  column {
+    id: "_Object$Type"
+    category: ccDIMENSION
+    type: ctFORMULA
+    vt: vINT
+    is_delta_key: true
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectType"
+    }
+  }
+  column {
+    id: "_Object$Name"
+    category: ccDIMENSION
+    type: ctFORMULA
+    vt: vSTR
+    format: "string"
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectName"
+    }
+  }
+  column {
+    id: "Utilization"
+    label: "Utilization"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vDBL
+    description: "The percentage of time an agent was active processing contacts as compared to current time."
+    format: "percent"
+    statistic {
+      stat_type_name: "Utilization"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Login_Time"
+    label: "Login Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total time that monitored agents were logged in."
+    format: "time"
+    statistic {
+      stat_type_name: "Total_Login_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+    }
+  }
+  column {
+    id: "Email_In_Process"
+    label: "Email In Process"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of interactions being handled by this resource at the moment of measurement. Applied to GroupAgents, this stat type provides the current number of interactions being processed by all the agents in a specified agent group."
+    format: "integer"
+    statistic {
+      stat_type_name: "Current_Interactions_In_Processing"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "EMAIL_MEDIA"
+    }
+  }
+  column {
+    id: "Email_Offered"
+    label: "Email Offered"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of emails that were offered for processing to this resource or agent group during the specified period. This stat type counts interactions both offered by business routing strategies and other agents."
+    format: "integer"
+    statistic {
+      stat_type_name: "Interactions_Offered"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "EMAIL_MEDIA"
+    }
+  }
+  column {
+    id: "Email_Accepted"
+    label: "Email Accepted"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of emails that were offered for processing and that were accepted during the specified period."
+    format: "integer"
+    statistic {
+      stat_type_name: "Interactions_Accepted"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "EMAIL_MEDIA"
+    }
+  }
+  column {
+    id: "Email_Processed"
+    label: "Email Processed"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of emails handled and processed by an agent or agent group during the specified period."
+    format: "integer"
+    statistic {
+      stat_type_name: "Interactions_Processed"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "EMAIL_MEDIA"
+    }
+  }
+  column {
+    id: "Email_Processing_Time"
+    label: "Email Process Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total amount of time the agents/agent groups spent processing email and SMS transactions."
+    format: "time"
+    statistic {
+      stat_type_name: "Interactions_Processing_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "EMAIL_MEDIA"
+    }
+  }
+  column {
+    id: "Chat_In_Process"
+    label: "Chat In Process"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of interactions being handled by this resource at the moment of measurement. Applied to GroupAgents, this stat type provides the current number of interactions being processed by all the agents in a specified agent group."
+    format: "integer"
+    statistic {
+      stat_type_name: "Current_Interactions_In_Processing"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "ChatSession"
+    }
+  }
+  column {
+    id: "Chat_Offered"
+    label: "Chat Offered"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of chats that were offered for processing to this resource during the specified period. This stat type counts interactions both offered by business routing strategies and other agents."
+    format: "integer"
+    statistic {
+      stat_type_name: "Interactions_Offered"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "ChatSession"
+    }
+  }
+  column {
+    id: "Chat_Accepted"
+    label: "Chat Accepted"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of chats that were offered for processing and that were accepted during the specified period."
+    format: "integer"
+    statistic {
+      stat_type_name: "Interactions_Accepted"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "ChatSession"
+    }
+  }
+  column {
+    id: "Chat_Processed"
+    label: "Chat Processed"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of Chats handled and processed by an agent or agent group during the specified period."
+    format: "integer"
+    statistic {
+      stat_type_name: "Interactions_Processed"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "ChatSession"
+    }
+  }
+  column {
+    id: "Chat_Processing_Time"
+    label: "Chat Process Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total amount of time the agent/agent groups spent processing chat transactions."
+    format: "time"
+    statistic {
+      stat_type_name: "Interactions_Processing_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "ChatSession"
+    }
+  }
+  column {
+    id: "Social_Media_in_Process"
+    label: "Social in Process"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of current interactions being handled by this resource at the moment of measurement."
+    format: "integer"
+    statistic {
+      stat_type_name: "Current_Interactions_In_Processing"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "Media_Social"
+    }
+  }
+  column {
+    id: "Social_Media_Offered"
+    label: "Social Offered"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of social Media interactions that were offered for processing to this resource during the specified period. This stat type counts interactions both offered by business routing strategies and other agents."
+    format: "integer"
+    statistic {
+      stat_type_name: "Interactions_Offered"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "Media_Social"
+    }
+  }
+  column {
+    id: "Social_Media_Accepted"
+    label: "Social Accepted"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of social Media interactions that were offered for processing and that were accepted during the specified period."
+    format: "integer"
+    statistic {
+      stat_type_name: "Interactions_Accepted"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "Media_Social"
+    }
+  }
+  column {
+    id: "Social_Media_Processed"
+    label: "Social Processed"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "The total number of Social Media interactions handled by an agent at this place or this agent at his desktop during the specified period."
+    format: "integer"
+    statistic {
+      stat_type_name: "Interactions_Processed"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "Media_Social"
+    }
+  }
+  column {
+    id: "Social_Media_Processing_Time"
+    label: "Social Process Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "The total amount of time the agent/agent group spent processing social media transactions."
+    format: "time"
+    statistic {
+      stat_type_name: "Interactions_Processing_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "Media_Social"
+    }
+  }
+  collector_def {
+    allowed_object_type: SObjectAgentPlace
+    allowed_object_type: SObjectAgent
+    allowed_object_type: SObjectGroupAgents
+    allowed_object_type: SObjectGroupPlaces
+  }
+  collector_label: "multimedia"
+}

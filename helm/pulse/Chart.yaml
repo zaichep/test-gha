@@ -1,0 +1,10 @@
+apiVersion: v2
+name: pulse
+description: A Helm chart for Pulse BE
+type: application
+version: 0.0.34
+appVersion: 9.0.006.00
+dependencies:
+- name: common
+  version: 0.1.13
+  repository: file://../common

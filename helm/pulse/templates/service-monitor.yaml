@@ -1,0 +1,17 @@
+{{- if .Values.monitoring.enabled -}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "pulse.fullname" . }}-service-monitor
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "pulse.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "pulse.selectorLabels" . | nindent 8 }}
+  endpoints:
+    - port: management-port
+      path: {{ .Values.options.managementContext }}{{ .Values.options.prometheusEndpoint }}
+      interval: 30s
+  {{- end }}

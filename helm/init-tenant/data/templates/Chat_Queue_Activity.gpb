@@ -1,0 +1,188 @@
+definition {
+  guid: "000000000000-0000-0000-0000-00000009"
+  layout_type: ltPCREGULAR
+  name: "Chat Queue Activity"
+  description: "Chat Queue Group activity."
+  is_read_only: true
+  refresh_interval: 60
+  default_widget_body {
+    size_x: 1
+    size_y: 2
+    label: "Chat Queue Activity"
+    view {
+      type: "BarView"
+      column_selector: "Requested"
+    }
+  }
+  column {
+    id: "_Object$ID"
+    category: ccDIMENSION
+    type: ctFORMULA
+    vt: vINT
+    is_delta_key: true
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectID"
+    }
+  }
+  column {
+    id: "_Object$Type"
+    category: ccDIMENSION
+    type: ctFORMULA
+    vt: vINT
+    is_delta_key: true
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectType"
+    }
+  }
+  column {
+    id: "_Object$Name"
+    category: ccDIMENSION
+    type: ctFORMULA
+    vt: vSTR
+    format: "string"
+    formula {
+      type: ftPCREFERENCE
+      text: "Object.ObjectName"
+    }
+  }
+  column {
+    id: "Service_Level"
+    label: "Service Level"
+    category: ccMEASURE
+    type: ctFORMULA
+    vt: vDBL
+    description: "A ratio of chats accepted to chat requested."
+    format: "percent"
+    formula {
+      type: ftPCSCRIPT
+      text: "if (Data.Requested.Value > 0) Result = 100 * Data.Accepted.Value / Data.Requested.Value; else Result = 0;"
+    }
+  }
+  column {
+    id: "Requested"
+    label: "Requested"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "Total number of Chats Requested."
+    format: "integer"
+    statistic {
+      stat_type_name: "Chat_Entered"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "CH_Start_VQ_Segment"
+    }
+  }
+  column {
+    id: "Accepted"
+    label: "Accepted"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "Total number of Chats Accepted by Agent."
+    format: "integer"
+    statistic {
+      stat_type_name: "Chat_Answered"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "CH_SA_VQ_Segment"
+    }
+  }
+  column {
+    id: "Abandoned"
+    label: "Abandoned"
+    category: ccMEASURE
+    type: ctFORMULA
+    vt: vINT
+    description: "Total number of chats that were abandoned while waiting."
+    format: "integer"
+    formula {
+      type: ftPCSCRIPT
+      text: "if (Data.Requested.Value - Data.Accepted.Value - Data.Current_Wait.Value > 0) Result = Data.Requested.Value - Data.Accepted.Value - Data.Current_Wait.Value; else Result = 0;"
+    }
+  }
+  column {
+    id: "Current_Wait"
+    label: "Current Wait"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "Current number of Chats waiting to be accepted."
+    format: "integer"
+    statistic {
+      stat_type_name: "Chat_CurrentWait"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "CH_SAS_VQ_Segment"
+    }
+  }
+  column {
+    id: "Requested_15M"
+    label: "Requested (15m)"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "Total number of Chats Requested."
+    format: "integer"
+    statistic {
+      stat_type_name: "Chat_Entered"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      time_profile: "Last15M"
+      filter: "CH_Start_VQ_Segment"
+    }
+  }
+  column {
+    id: "Accepted_15M"
+    label: "Accepted (15m)"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vINT
+    description: "Total number of Chats Accepted by Agent."
+    format: "integer"
+    statistic {
+      stat_type_name: "Chat_Answered"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      time_profile: "Last15M"
+      filter: "CH_SA_VQ_Segment"
+    }
+  }
+  column {
+    id: "Wait_Time"
+    label: "Wait Time"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "Total time chat spent waiting before being abandoned or accepted by Agent."
+    format: "time"
+    statistic {
+      stat_type_name: "Chat_Wait_Time"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "CH_SAS_VQ_Segment"
+    }
+  }
+  column {
+    id: "Avg_Wait_Time"
+    label: "AWT"
+    category: ccMEASURE
+    type: ctSTATSERVER
+    vt: vLONG
+    description: "Avg time chat spent waiting before being abandoned or accepted by Agent."
+    format: "time"
+    statistic {
+      stat_type_name: "Chat_Wait_Time_Avg"
+      notification_mode: STimeBasedNotification
+      notification_interval: 60
+      filter: "CH_SAS_VQ_Segment"
+    }
+  }
+  collector_def {
+    allowed_object_type: SObjectGroupQueues
+    allowed_object_type: SObjectQueue
+  }
+  collector_label: "multimedia"
+}
