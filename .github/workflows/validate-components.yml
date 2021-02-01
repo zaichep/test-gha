@@ -164,7 +164,6 @@ jobs:
           value=true
           if [ -e "helm/modify-${{ matrix.chart }}-${{ steps.chart-info.outputs.hash }}.lock" ]; then
             if [ -e "helm/modify-values-${{ matrix.chart }}-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.values-hash }}.lock" ]; then
-              value=false
               if [ -e ".github/workflows/modify-validate-components-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.workflow-hash }}.lock" ]; then
                 value=false
               fi
