@@ -40,7 +40,6 @@ jobs:
       - name: Get Parameters
         id: params
         run: |
-          set -x
           provider=azure
           charts=($(find ${GITHUB_WORKSPACE}/helm -maxdepth 1 -mindepth 1 -type d -printf '%f\n'))
           environments=(dev stage prod001)
@@ -71,7 +70,7 @@ jobs:
           set -x
           echo "::set-output name=charts-json::${charts_json}"
           echo "::set-output name=helm-chart-matrix::{\"chart\":${charts_json}}"
-          echo "::set-output name=helm-chart-values-matrix::{\"include\":${matrix_includes_json}}"
+          echo "::set-output name=helm-chart-values-matrix::{\"include\":${values_matrix_includes_json}}"
 
   # Cache Helm Chart #####################################################
   helm-chart:
