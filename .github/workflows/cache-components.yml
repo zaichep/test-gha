@@ -41,15 +41,37 @@ jobs:
         id: params
         run: |
           set -x
+          provider=azure
           charts=($(find ${GITHUB_WORKSPACE}/helm -maxdepth 1 -mindepth 1 -type d -printf '%f\n'))
           environments=(dev stage prod001)
           locations=(westus2 eastus2)
           charts_json=$(printf '"%s",' "${charts[@]}" | sed 's/^/[/;s/,$/]/')
           environments_json=$(printf '"%s",' "${environments[@]}" | sed 's/^/[/;s/,$/]/')
           locations_json=$(printf '"%s",' "${locations[@]}" | sed 's/^/[/;s/,$/]/')
+          values_matrix_includes=()
+          for chart in "${charts[@]}"; do
+            version=$(helm show chart "helm/${chart}" | grep -e "^version:" | sed -E "s/[a-z:]+[[:blank:]]+//")
+            ver_files=("versions/${provider}/versions.json")
+            for environment in "${environments[@]}"; do
+              ver_files=("versions/${provider}/${environment}/versions.json" "${ver_files[@]}")
+              for location in "${locations[@]}"; do
+                ver_files=("versions/${provider}/${environment}/${location}/versions.json" "${ver_files[@]}")
+                for ver_file in "${ver_files[@]}"; do
+                  if [[ -e ${ver_file} ]]; then
+                    if [[ $(jq -r ".[\"${chart}\"]" "${ver_file}") == "${version}" ]]; then
+                      values_matrix_includes+=("{\"chart\":\"${chart}\",\"environment\":\"${environment}\",\"location\":\"${location}\"}")
+                      break
+                    fi
+                  fi
+                done
+              done
+            done
+          done
+          values_matrix_includes_json=$(printf '%s,' "${values_matrix_includes[@]}" | sed 's/^/[/;s/,$/]/')
+          set -x
           echo "::set-output name=charts-json::${charts_json}"
           echo "::set-output name=helm-chart-matrix::{\"chart\":${charts_json}}"
-          echo "::set-output name=helm-chart-values-matrix::{\"chart\":${charts_json},\"environment\":${environments_json},\"location\":${locations_json}}"
+          echo "::set-output name=helm-chart-values-matrix::{\"include\":${matrix_includes_json}}"
 
   # Cache Helm Chart #####################################################
   helm-chart:
