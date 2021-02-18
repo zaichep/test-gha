@@ -135,7 +135,7 @@ jobs:
                         )
                       fi
                     done
-                  elif [[ -f "${tenant_dir}/${sid}/values.yaml" ]]
+                  elif [[ -f "${tenant_dir}/${sid}/values.yaml" ]]; then
                     charts_matrix_includes+=(
                       "{\"chart\":\"${chart}\",\"environment\":\"${environment}\",\"location\":\"${location}\",\"tenant\":\"${tenant}\"}"
                     )
