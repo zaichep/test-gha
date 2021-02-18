@@ -79,7 +79,7 @@ jobs:
             shared=false
             case "${chart}" in
             init)
-              if [[ ${prtitle} != *"deploy-init:"* ]]; then
+              if [[ ${prtitle} == *"deploy-init:"* ]]; then
                 deploy_charts_matrix_enabled=true
               else
                 continue
@@ -87,9 +87,9 @@ jobs:
               shared=true
               ;;
             pulse|monitor)
-              if [[ ${prtitle} != *"deploy-shared:"* ]]; then
+              if [[ ${prtitle} == *"deploy-shared:"* ]]; then
                 deploy_charts_matrix_enabled=true
-              elif [[ ${prtitle} != *"destroy-shared:"* ]]; then
+              elif [[ ${prtitle} == *"destroy-shared:"* ]]; then
                 destroy_charts_matrix_enabled=true
               else
                 continue
@@ -97,9 +97,9 @@ jobs:
               shared=true
               ;;
             pulse-manage-agents)
-              if [[ ${prtitle} != *"deploy-advance:"* ]]; then
+              if [[ ${prtitle} == *"deploy-advance:"* ]]; then
                 deploy_charts_matrix_enabled=true
-              elif [[ ${prtitle} != *"destroy-advance:"* ]]; then
+              elif [[ ${prtitle} == *"destroy-advance:"* ]]; then
                 destroy_charts_matrix_enabled=true
               else
                 continue
@@ -107,9 +107,9 @@ jobs:
               shared=true
               ;;
             *)
-              if [[ ${prtitle} != *"deploy:"* ]]; then
+              if [[ ${prtitle} == *"deploy:"* ]]; then
                 deploy_charts_matrix_enabled=true
-              elif [[ ${prtitle} != *"destroy:"* ]]; then
+              elif [[ ${prtitle} == *"destroy:"* ]]; then
                 destroy_charts_matrix_enabled=true
               else
                 continue
@@ -164,7 +164,7 @@ jobs:
           echo "::set-output name=tenants::${tenants[*]}"
           echo "::set-output name=deploy-helm-chart-matrix::{\"include\":${deploy_charts_matrix_includes_json}}"
           echo "::set-output name=deploy-helm-chart-enabled::${deploy_charts_matrix_enabled}"
-          echo "::set-output name=destroy-helm-chart-matrix::{\"include\":${deploy_charts_matrix_includes_json}}"
+          echo "::set-output name=destroy-helm-chart-matrix::{\"include\":${destroy_charts_matrix_includes_json}}"
           echo "::set-output name=destroy-helm-chart-enabled::${deploy_charts_matrix_enabled}"
           echo "::set-output name=terraform-matrix::{\"environment\":${environments_json},\"location\":${locations_json}}"
 
