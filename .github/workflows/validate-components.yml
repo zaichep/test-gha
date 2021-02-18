@@ -18,15 +18,28 @@ jobs:
   # Inititlize parameters ################################################
   init:
     outputs:
-      # List of charts separated by spaces
-      charts: ${{ steps.params.outputs.charts }}
       # List of tenants separated by spaces
       tenants: ${{ steps.params.outputs.tenants }}
-      # Matrix of charts in JSON format
+      # Matrix in JSON format for deploy-helm-chart job
       #  chart: [...]
-      #  environment: [...]
-      #  location: [...]
-      helm-chart-matrix: '${{ steps.params.outputs.helm-chart-matrix }}'
+      #  environment: [dev]
+      #  location: [westus2]
+      #  tenant: [...]
+      deploy-helm-chart-matrix: ${{ steps.params.outputs.deploy-helm-chart-matrix }}
+      # The deploy-helm-chart job is enabled
+      deploy-helm-chart-enabled: '${{ steps.params.outputs.deploy-helm-chart-enabled }}'
+      # Matrix in JSON format for destroy-helm-chart job
+      #  chart: [...]
+      #  environment: [dev]
+      #  location: [westus2]
+      #  tenant: [...]
+      destroy-helm-chart-matrix: ${{ steps.params.outputs.destroy-helm-chart-matrix }}
+      # The destroy-helm-chart job is enabled
+      destroy-helm-chart-enabled: '${{ steps.params.outputs.destroy-helm-chart-enabled }}'
+      # Matrix in JSON format for terraform job
+      #  environment: [dev]
+      #  location: [westus2]
+      terraform-matrix: ${{ steps.params.outputs.terraform-matrix }}
 
     runs-on: ubuntu-latest
 
@@ -45,134 +58,146 @@ jobs:
       - name: Get Parameters
         id: params
         run: |
-          set -x
-          charts=($(find ${GITHUB_WORKSPACE}/helm -maxdepth 1 -mindepth 1 -type d -not -name common -printf '%f\n'))
-          environments=()
-          locations=()
-          tenants=()
+          prtitle="${{ github.event.pull_request.title }}"
+          # environments=("${{steps.prtitle.outputs.environment}}")
+          # locations=("${{steps.prtitle.outputs.location}}")
+          # tenants=(${{steps.prtitle.outputs.tenants}})
+          environments=(dev)
+          locations=(westus2 eastus2)
+          tenants=(000---BULK)
           if [[ ${#environments[@]} -eq 0 ]]; then
             environments=(dev)
           fi
           if [[ ${#locations[@]} -eq 0 ]]; then
             locations=(westus2 eastus2)
           fi
-          charts_json=$(printf '"%s",' "${charts[@]}" | sed 's/^/[/;s/,$/]/')
+          deploy_charts_matrix_enabled=false
+          destroy_charts_matrix_enabled=false
+          charts_matrix_includes=()
+          all_charts=($(find ${GITHUB_WORKSPACE}/helm -maxdepth 1 -mindepth 1 -type d -not -name common -printf '%f\n'))
+          for chart in "${all_charts[@]}"; do
+            shared=false
+            case "${chart}" in
+            init)
+              if [[ ${prtitle} != *"deploy-init:"* ]]; then
+                deploy_charts_matrix_enabled=true
+              else
+                continue
+              fi
+              shared=true
+              ;;
+            pulse|monitor)
+              if [[ ${prtitle} != *"deploy-shared:"* ]]; then
+                deploy_charts_matrix_enabled=true
+              elif [[ ${prtitle} != *"destroy-shared:"* ]]; then
+                destroy_charts_matrix_enabled=true
+              else
+                continue
+              fi
+              shared=true
+              ;;
+            pulse-manage-agents)
+              if [[ ${prtitle} != *"deploy-advance:"* ]]; then
+                deploy_charts_matrix_enabled=true
+              elif [[ ${prtitle} != *"destroy-advance:"* ]]; then
+                destroy_charts_matrix_enabled=true
+              else
+                continue
+              fi
+              shared=true
+              ;;
+            *)
+              if [[ ${prtitle} != *"deploy:"* ]]; then
+                deploy_charts_matrix_enabled=true
+              elif [[ ${prtitle} != *"destroy:"* ]]; then
+                destroy_charts_matrix_enabled=true
+              else
+                continue
+              fi
+              ;;
+            esac
+            for environment in "${environments[@]}"; do
+              for location in "${locations[@]}"; do
+                if ${shared}; then
+                  charts_matrix_includes+=(
+                    "{\"chart\":\"${chart}\",\"environment\":\"${environment}\",\"location\":\"${location}\",\"tenant\":\"shared\"}"
+                  )
+                  continue
+                fi
+                tenant_dir=helmvalues/${chart}/azure/${environment}/${location}
+                for tenant in "${tenants[@]}"; do
+                  sid="${tenant%---*}"
+                  if [[ "${tenant}" == "000---BULK" ]]; then
+                    for dir in $(ls ${tenant_dir}); do
+                      if [[ -f "${tenant_dir}/${dir}/values.yaml" ]]; then
+                        charts_matrix_includes+=(
+                          "{\"chart\":\"${chart}\",\"environment\":\"${environment}\",\"location\":\"${location}\",\"tenant\":\"${dir}\"}"
+                        )
+                      fi
+                    done
+                  elif [[ -f "${tenant_dir}/${sid}/values.yaml" ]]
+                    charts_matrix_includes+=(
+                      "{\"chart\":\"${chart}\",\"environment\":\"${environment}\",\"location\":\"${location}\",\"tenant\":\"${tenant}\"}"
+                    )
+                  fi
+                done
+              done
+            done
+          done
+          if ${deploy_charts_matrix_enabled} && ${destroy_charts_matrix_enabled}; then
+            echo "ERROR: deploy and destroy are exclusive."
+            exit 1
+          fi
+          charts_matrix_includes_json=$(printf '%s,' "${charts_matrix_includes[@]}" | sed 's/^/[/;s/,$/]/')
+          deploy_charts_matrix_includes_json="[]"
+          destroy_charts_matrix_includes_json="[]"
+          if ${deploy_charts_matrix_enabled}; then
+            [[ ${#charts_matrix_includes[@]} -eq 0 ]] && deploy_charts_matrix_enabled=false
+            deploy_charts_matrix_includes_json="${charts_matrix_includes_json}"
+          elif ${destroy_charts_matrix_enabled}; then
+            [[ ${#charts_matrix_includes[@]} -eq 0 ]] && destroy_charts_matrix_enabled=false
+            destroy_charts_matrix_includes_json="${charts_matrix_includes_json}"
+          fi
           environments_json=$(printf '"%s",' "${environments[@]}" | sed 's/^/[/;s/,$/]/')
           locations_json=$(printf '"%s",' "${locations[@]}" | sed 's/^/[/;s/,$/]/')
-          echo "::set-output name=charts::${charts[*]}"
+          set -x
           echo "::set-output name=tenants::${tenants[*]}"
-          echo "::set-output name=helm-chart-matrix::{\"chart\":${charts_json},\"environment\":${environments_json},\"location\":${locations_json}}"
+          echo "::set-output name=deploy-helm-chart-matrix::{\"include\":${deploy_charts_matrix_includes_json}}"
+          echo "::set-output name=deploy-helm-chart-enabled::${deploy_charts_matrix_enabled}"
+          echo "::set-output name=destroy-helm-chart-matrix::{\"include\":${deploy_charts_matrix_includes_json}}"
+          echo "::set-output name=destroy-helm-chart-enabled::${deploy_charts_matrix_enabled}"
+          echo "::set-output name=terraform-matrix::{\"environment\":${environments_json},\"location\":${locations_json}}"
 
-  # Aggregate states of validation #######################################
-  build:
-    needs: [ init, helm-chart ]
-    if: always()
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Check Job Statuses
-        run: |
-          [[ "${{ contains(needs.*.result, 'failure') }}" == "false" ]]
-
-  # Validate Helm Chart ##################################################
-  helm-chart:
+  deploy-helm-chart:
     needs: [ init ]
+    if: "needs.init.outputs.deploy-helm-chart-enabled == 'true'
+      && github.event.pull_request.merged == 'true'
+      && !contains(needs.*.result, 'failure')"
     strategy:
-      matrix: ${{ fromJSON(needs.init.outputs.helm-chart-matrix) }}
+      matrix: ${{ fromJSON(needs.init.outputs.deploy-helm-chart-matrix) }}
       fail-fast: false
 
     runs-on: ubuntu-latest
 
     steps:
-      - name: Clean Workspace
-        uses: AutoModality/action-clean@d004b47eb728f2a83316fc70ba9a62ef97278013 # v1.1.0
-      - name: Clean up Runner
-        run: |
-          rm -f ~/.ssh/*
-          rm -f ~/.gitconfig
-        continue-on-error: true
-
-      - name: Checkout Repository
-        uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f # v2.3.4
-
       - name: Get Info
         id: chart-info
         run: |
-          set -x
-          version=$(helm show chart helm/${{ matrix.chart }} | grep -e "^version:" | sed -E "s/[a-z:]+[[:blank:]]+//")
-          echo "::set-output name=version::${version}"
-          echo "::set-output name=hash::${{ hashFiles(
-            format('helm/{0}/**', matrix.chart),
-            'helm/common/**') }}"
-          echo "::set-output name=values-hash::${{ hashFiles(
-            format('helmvalues/{0}/*/*.yaml', matrix.chart),
-            format('helmvalues/{0}/*/{1}/*.yaml', matrix.chart, matrix.environment),
-            format('helmvalues/{0}/*/{1}/{2}/**', matrix.chart, matrix.environment, matrix.location),
-            'helm/common/*/*.yaml',
-            format('helmvalues/common/*/{0}/*.yaml', matrix.environment),
-            format('helmvalues/common/*/{0}/{1}/**', matrix.environment, matrix.location),
-            '.github/workflows/validate-components.yml') }}"
+          true
 
-      - name: Get Published
-        uses: actions/cache@0781355a23dac32fd3bac414512f4b903437991a # v2.1.3
-        with:
-          path: |
-            helm/publish-${{ matrix.chart }}-${{ steps.chart-info.outputs.version }}.lock
-          key: ${{ runner.os }}-publish-helm-chart-${{ matrix.chart }}-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.version }}
-          restore-keys: publish-helm-chart-${{ matrix.chart }}-${{ steps.chart-info.outputs.version }}
+  destroy-helm-chart:
+    needs: [ init ]
+    if: "needs.init.outputs.destroy-helm-chart-enabled == 'true'
+      && github.event.pull_request.merged == 'true'
+      && !contains(needs.*.result, 'failure')"
+    strategy:
+      matrix: ${{ fromJSON(needs.init.outputs.destroy-helm-chart-matrix) }}
+      fail-fast: false
 
-      - name: Check Published
-        id: published
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get Info
+        id: chart-info
         run: |
-          value=false
-          if [ -e "helm/publish-${{ matrix.chart }}-${{ steps.chart-info.outputs.version }}.lock" ]; then
-            value=true
-          fi
-          set -x
-          echo "::set-output name=value::${value}"
-
-      - name: Get Chart Modified
-        uses: actions/cache@0781355a23dac32fd3bac414512f4b903437991a # v2.1.3
-        with:
-          path: |
-            helm/modify-${{ matrix.chart }}-${{ steps.chart-info.outputs.hash }}.lock
-          key: ${{ runner.os }}-modify-helm-chart-${{ matrix.chart }}-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.hash }}
-          restore-keys: modify-helm-chart-${{ matrix.chart }}-${{ steps.chart-info.outputs.hash }}
-
-      - name: Get Values Modified
-        uses: actions/cache@0781355a23dac32fd3bac414512f4b903437991a # v2.1.3
-        with:
-          path: |
-            helm/modify-values-${{ matrix.chart }}-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.values-hash }}.lock
-          key: ${{ runner.os }}-modify-helm-chart-values-${{ matrix.chart }}-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.values-hash }}
-          restore-keys: modify-helm-chart-values-${{ matrix.chart }}-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.values-hash }}
-
-      - name: Check Modified
-        id: modified
-        run: |
-          value=true
-          if [ -e "helm/modify-${{ matrix.chart }}-${{ steps.chart-info.outputs.hash }}.lock" ]; then
-            if [ -e "helm/modify-values-${{ matrix.chart }}-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.values-hash }}.lock" ]; then
-              value=false
-            fi
-          elif [ "${{ steps.published.outputs.value }}" = "true" ]; then
-            echo "ERROR: The chart ${{ matrix.chart }}-${{ steps.chart-info.outputs.version }} is already published."
-            echo "ERROR: Consider to bump up chart's version."
-            exit 1
-          fi
-          set -x
-          echo "::set-output name=value::${value}"
-
-      - name: Do Action
-        if: steps.modified.outputs.value == 'true'
-        run: |
-          echo "Do action on ${{ matrix.chart }}-${{ matrix.environment }}-${{ matrix.location }}"
-
-      - name: Cache Result
-        if: success()
-        run: |
-          set +x
-          echo "${{ steps.chart-info.outputs.hash }}" \
-            > "helm/modify-${{ matrix.chart }}-${{ steps.chart-info.outputs.hash }}.lock"
-          echo "${{ steps.chart-info.outputs.values-hash }}" \
-            > "helm/modify-values-${{ matrix.chart }}-${{ matrix.environment }}-${{ matrix.location }}-${{ steps.chart-info.outputs.values-hash }}.lock"
+          true
