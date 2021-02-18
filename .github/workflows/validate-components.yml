@@ -165,13 +165,12 @@ jobs:
           echo "::set-output name=deploy-helm-chart-matrix::{\"include\":${deploy_charts_matrix_includes_json}}"
           echo "::set-output name=deploy-helm-chart-enabled::${deploy_charts_matrix_enabled}"
           echo "::set-output name=destroy-helm-chart-matrix::{\"include\":${destroy_charts_matrix_includes_json}}"
-          echo "::set-output name=destroy-helm-chart-enabled::${deploy_charts_matrix_enabled}"
+          echo "::set-output name=destroy-helm-chart-enabled::${destroy_charts_matrix_enabled}"
           echo "::set-output name=terraform-matrix::{\"environment\":${environments_json},\"location\":${locations_json}}"
 
   deploy-helm-chart:
     needs: [ init ]
     if: "needs.init.outputs.deploy-helm-chart-enabled == 'true'
-      && github.event.pull_request.merged == 'true'
       && !contains(needs.*.result, 'failure')"
     strategy:
       matrix: ${{ fromJSON(needs.init.outputs.deploy-helm-chart-matrix) }}
@@ -188,7 +187,6 @@ jobs:
   destroy-helm-chart:
     needs: [ init ]
     if: "needs.init.outputs.destroy-helm-chart-enabled == 'true'
-      && github.event.pull_request.merged == 'true'
       && !contains(needs.*.result, 'failure')"
     strategy:
       matrix: ${{ fromJSON(needs.init.outputs.destroy-helm-chart-matrix) }}
