@@ -64,7 +64,7 @@ jobs:
           # tenants=(${{steps.prtitle.outputs.tenants}})
           environments=(dev)
           locations=(westus2 eastus2)
-          tenants=(000---BULK)
+          tenants=(1100---DEV 1200 2100)
           if [[ ${#environments[@]} -eq 0 ]]; then
             environments=(dev)
           fi
