@@ -1,4 +1,6 @@
 #!/bin/bash
 
+: ${WHOM:=Unknown}
+
 env
-echo "Goodbye, ${INPUT_WHOTOGREET}!"
+echo "Goodbye, ${WHOM}!"
