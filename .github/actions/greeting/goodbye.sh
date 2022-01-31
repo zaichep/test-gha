@@ -1,4 +1,4 @@
 #!/bin/bash
 
 env
-echo "Goodbye"
+echo "Goodbye, ${INPUT_WHOTOGREET}!"
