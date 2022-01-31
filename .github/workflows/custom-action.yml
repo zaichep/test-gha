@@ -1,7 +1,7 @@
 # Validate components when creating a Pull Request.
 # See README.md for all supported parameters.
 
-name: Validate Components
+name: Custom Actions
 
 on:
   pull_request:
@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - id: foo
-        uses: ./.github/actions/greeting
+        uses: .github/actions/greeting
         with:
           who-to-greet: "Mona the Octocat"
       - run: echo random-number ${{ steps.foo.outputs.random-number }}
