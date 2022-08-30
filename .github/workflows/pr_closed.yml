@@ -25,6 +25,11 @@ jobs:
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          set -x
-          git log
-          git diff --name-status HEAD~1 -- .
+          echo =================
+          ( set -x; git log )
+          echo =================
+          ( set -x; git diff --name-status HEAD~1 -- . )
+          echo =================
+          ( set -x; git diff --name-status ${{ github.base_ref }} -- .github )
+          echo =================
+          ( set -x; git diff --name-status ${{ github.base_ref }} -- ${GITHUB_WORKSPACE}/.github )
