@@ -1,6 +1,0 @@
-# Helm chart values overrides common for all Azure environments
-
-priorityClassName: genesysengage-medium-priority
-
-nodeSelector:
-  genesysengage.com/nodepool: general

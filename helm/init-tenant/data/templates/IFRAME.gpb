@@ -1,8 +1,0 @@
-definition {
-  layout_type: ltIFRAME
-  name: "IFRAME"
-  guid: "000000000000-0000-0000-0000-0000000d"
-  description: "Template for creating simple IFRAME widget."
-  is_read_only: true
-  refresh_interval: 60
-}

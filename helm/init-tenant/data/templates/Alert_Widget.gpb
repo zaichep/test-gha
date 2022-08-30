@@ -1,8 +1,0 @@
-definition {
-  layout_type: ltALERT
-  name: "Alert Widget"
-  guid: "000000000000-0000-0000-0000-00000016"
-  description: "Template for creating Alert widget."
-  is_read_only: true
-  refresh_interval: 60
-}

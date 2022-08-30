@@ -1,4 +1,0 @@
-# Helm chart values overrides common for all Azure environments
-
-deployment:
-  type: azure

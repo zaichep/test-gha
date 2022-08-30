@@ -1,6 +1,0 @@
-# Helm chart values overrides common to all Azure Prod001 locations
-
-image:
-  pullPolicy: Always
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: 9.0.100.01
