@@ -1,6 +1,0 @@
-apiVersion: v2
-name: common
-description: Common Helm Utils
-type: library
-version: 0.1.13
-appVersion: 1.0.0

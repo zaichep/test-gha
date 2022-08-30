@@ -1,4 +1,0 @@
-# Helm chart values overrides common to all Azure Prod001 locations
-
-image:
-  tag: 9.0.100.01

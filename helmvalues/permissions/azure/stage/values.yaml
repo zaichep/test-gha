@@ -1,8 +1,0 @@
-# Helm chart values overrides common to all Azure Stage locations
-
-image:
-  tag: 9.0.100.01
-
-csproxy:
-  image:
-    tag: 9.0.100.01

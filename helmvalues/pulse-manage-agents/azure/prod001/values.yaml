@@ -1,8 +1,0 @@
-# Helm chart values overrides common to all Azure Prod001 locations
-
-image:
-  name: manage-agents
-  tag: 9.0.000.00.latest
-  pullPolicy: IfNotPresent
-
-

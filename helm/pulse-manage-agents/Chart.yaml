@@ -1,9 +1,0 @@
-apiVersion: v2
-name: pulse-manage-agents
-appVersion: 9.0.006.00
-description: A Pulse Manage Agents Helm chart for Kubernetes
-version: 0.1.22
-dependencies:
-- name: common
-  version: 0.1.13
-  repository: file://../common
