@@ -28,8 +28,6 @@ jobs:
           echo =================
           ( set -x; git log )
           echo =================
-          ( set -x; git diff --name-status HEAD~1 -- . )
+          ( set -x; git diff --name-status HEAD~1 -- .github )
           echo =================
-          ( set -x; git diff --name-status ${{ github.base_ref }} -- .github )
-          echo =================
-          ( set -x; git diff --name-status ${{ github.base_ref }} -- ${GITHUB_WORKSPACE}/.github )
+          ( set -x; git diff --name-status HEAD~1 -- ${GITHUB_WORKSPACE}/.github )
