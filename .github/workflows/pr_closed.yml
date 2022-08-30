@@ -25,7 +25,6 @@ jobs:
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          set -x
           echo =================
           ( set -x; git log )
           echo =================
